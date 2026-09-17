@@ -74,8 +74,8 @@ def generate_all_category_items():
                 "category": cat,
                 "sub_category": sub_cat,
                 "location": city,
-                "lat": CITY_COORDS[city]["lat"] + random.uniform(-0.01, 0.01),
-                "lon": CITY_COORDS[city]["lon"] + random.uniform(-0.01, 0.01),
+                "lat": CITY_COORDS[city]["lat"],
+                "lon": CITY_COORDS[city]["lon"],
                 "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
                 "description": f"פריט איכותי ששייך לקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום.",
                 "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
@@ -202,22 +202,28 @@ if choice == "🛍️ לוח פריטים למסירה":
 
 elif choice == "🗺️ מפה ארצית אינטראקטיבית":
     st.subheader("🗺️ מפה ארצית אינטראקטיבית")
-    st.write("לחץ על כל סמן (נקודה) במפה כדי לראות את פרטי החפץ, הכותרת והעיר:")
+    st.write("לחץ על כל סמן (נקודה) במפה כדי לראות את כותרת הפריט, הקטגוריה והעיר:")
     
-    # יצירת מפה מתקדמת עם Folium
-    m = folium.Map(location=[31.8944, 34.8094], zoom_start=8, tiles="CartoDB dark_matter")
+    # מפה נקייה וחופשית לחלוטין ללא שגיאות API
+    m = folium.Map(location=[31.8944, 34.8094], zoom_start=8)
     
-    for item in st.session_state['items']:
-        lat = item.get('lat', 31.8944)
-        lon = item.get('lon', 34.8094)
+    # פיזור חכם של הפריטים במפה כדי שכל פריט יקבל נקודה משלו ולא יתעטף על פריט אחר
+    for idx, item in enumerate(st.session_state['items']):
+        base_lat = item.get('lat', 31.8944)
+        base_lon = item.get('lon', 34.8094)
+        
+        # הוספת הזזה קטנה ומבוססת אינדקס כדי לפזר את הנקודות סביב העיר בצורה מושלמת
+        lat = base_lat + (idx * 0.0015 % 0.03) - 0.015
+        lon = base_lon + (idx * 0.0020 % 0.03) - 0.015
+        
         title = item.get('title', 'ללא כותרת')
         loc = item.get('location', 'ישראל')
-        cat = item.get('category', '')
+        cat = item.get('sub_category', item.get('category', ''))
         
         popup_html = f"""
-        <div style="direction: rtl; text-align: right; font-family: sans-serif; width: 180px;">
-            <b>{title}</b><br>
-            <span style="color: #666; font-size: 0.8rem;">📍 {loc} | {cat}</span>
+        <div style="direction: rtl; text-align: right; font-family: sans-serif; width: 200px;">
+            <b style="font-size: 1rem; color: #1e293b;">{title}</b><br>
+            <span style="color: #64748b; font-size: 0.85rem;">📍 {loc} | {cat}</span>
         </div>
         """
         
@@ -225,10 +231,9 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
             location=[lat, lon],
             popup=folium.Popup(popup_html, max_width=250),
             tooltip=title,
-            icon=folium.Icon(color="blue", icon="info-sign")
+            icon=folium.Icon(color="red" if item.get('type') == 'request' else "blue", icon="info-sign")
         ).add_to(m)
         
-    # הצגת המפה האינטראקטיבית באפליקציה
     st_folium(m, width=1200, height=550)
     
     st.divider()
@@ -315,7 +320,7 @@ elif choice == "🤖 מעבדה":
     if st.button("🚀 טען מחדש את כל התת-קטגוריות אוטומטית", type="primary"):
         st.session_state['items'] = generate_all_category_items()
         save_items(st.session_state['items'])
-        st.success("המאגר אופס ונוצר מחדש בהצלחה עם כיסוי מלא של כל התת-קטגוריות!")
+        st.success("המאגר אופס ונוצר מחדש בהצלחה עם כיסוי מלא של כל התת-קטגוריות במפה!")
     if st.button("🗑️ איפוס מלא של הלוח"):
         st.session_state['items'] = []
         st.session_state['favorites'] = []
