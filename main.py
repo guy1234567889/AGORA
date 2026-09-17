@@ -57,7 +57,7 @@ CATEGORY_IMAGES = {
 }
 
 def calculate_distance(lat1, lon1, lat2, lon2):
-    R = 6371  # רדיוס כדור הארץ בקילומטרים
+    R = 6371
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
@@ -302,17 +302,15 @@ elif choice == "🤖 סוכן חכם למציאת חפצים":
     
     col_agent1, col_agent2 = st.columns(2)
     with col_agent1:
-        user_city = st.selectbox("📍 בחר את אזור המגורים שלך:", list(CITY_COORDS.keys()), index=0) # ברירת מחדל רחובות
+        user_city = st.selectbox("📍 בחר את אזור המגורים שלך:", list(CITY_COORDS.keys()), index=0)
     with col_agent2:
         search_query = st.text_input("🔍 מה הפריט שאתה מחפש?", placeholder="למשל: ספה, מכונת כביסה, ESP32...")
         
     if search_query:
         user_coords = CITY_COORDS[user_city]
         
-        # חישוב מרחקים ומיון מהקרוב לרחוק
         scored_items = []
         for item in st.session_state['items']:
-            # בדיקת התאמה לפי חיפוש טקסט בכותרת, תיאור או קטגוריה
             title = item.get('title', '')
             desc = item.get('description', '')
             sub_cat = item.get('sub_category', '')
@@ -324,11 +322,10 @@ elif choice == "🤖 סוכן חכם למציאת חפצים":
                 dist = calculate_distance(user_coords['lat'], user_coords['lon'], item_lat, item_lon)
                 scored_items.append((dist, item))
                 
-        # מיון מהקרוב ביותר לרחוק ביותר (מה שקרוב אליך קודם, ומתקדם החוצה בהדרגה)
         scored_items.sort(key=lambda x: x[0])
         
         st.divider()
-        st.markdown(### תוצאות החיפוש עבור: '{search_query}' מתוך {user_city})
+        st.markdown(f"### תוצאות החיפוש עבור '{search_query}' מתוך {user_city}")
         
         if not scored_items:
             st.warning("לא נמצאו פריטים התואמים לחיפוש שלך במאגר. נסה לחפש מילת מפתח אחרת או טען נתונים במעבדה.")
