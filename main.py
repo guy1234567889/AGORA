@@ -232,7 +232,7 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
     
     selected_map_city = st.selectbox("🎯 בחר אזור / עיר להתמקדות במפה:", ["כל הארץ"] + list(CITY_COORDS.keys()))
     
-    st.markdown("🔵 **כחול:** פריטים למסירה | 🔴 **אדום:** פריטים דרושים | *לחץ על כל נקודה במפה לפרטי החפץ*")
+    st.markdown("🔵 **כחול:** פריטים למסירה | 🔴 **אדום:** פריטים דרושים | *לחץ על כל נקודה במפה לפתיחת מלוא פרטי החפץ וקישור לוואטסאפ*")
     
     if selected_map_city == "כל הארץ":
         map_center = [31.8944, 34.8094]
@@ -266,11 +266,28 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
         title = item.get('title', 'ללא כותרת')
         loc = item.get('location', 'ישראל')
         cat = item.get('sub_category', item.get('category', ''))
+        phone = item.get('phone', '0501234567')
+        wa_num = phone[1:] if phone.startswith('0') else phone
+        owner = item.get('owner', {"name": "משתמש", "karma": 10})
+        desc = item.get('description', '')
+        condition = item.get('condition', 'כמו חדש')
         
+        # חלון קופץ עשיר ומפורט הכולל את כל הפרטים וקישור ישיר לוואטסאפ!
         popup_html = f"""
-        <div style="direction: rtl; text-align: right; font-family: sans-serif; width: 200px;">
-            <b style="font-size: 1rem; color: #1e293b;">{title}</b><br>
-            <span style="color: #64748b; font-size: 0.85rem;">📍 {loc} | {cat}</span>
+        <div style="direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; width: 250px; color: #1e293b;">
+            <h4 style="margin: 0 0 5px 0; color: #0f172a; font-size: 1.1rem;">{title}</h4>
+            <div style="font-size: 0.8rem; color: #475569; margin-bottom: 6px;">
+                👤 {owner.get('name')} (⭐ {owner.get('karma')})
+            </div>
+            <div style="margin-bottom: 6px;">
+                <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">{cat}</span>
+                <span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">📍 {loc}</span>
+            </div>
+            <p style="font-size: 0.85rem; color: #334155; margin: 6px 0; max-height: 70px; overflow-y: auto;">{desc}</p>
+            <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 8px;">מצב: <b>{condition}</b></div>
+            <a href="https://wa.me/972{wa_num}" target="_blank" style="display: block; text-align: center; background-color: #25D366; color: white !important; padding: 7px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem;">
+                💬 פנה בוואטסאפ ({phone})
+            </a>
         </div>
         """
         
@@ -278,7 +295,7 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
         
         folium.Marker(
             location=[lat, lon],
-            popup=folium.Popup(popup_html, max_width=250),
+            popup=folium.Popup(popup_html, max_width=280),
             tooltip=title,
             icon=folium.Icon(color=marker_color, icon="info-sign")
         ).add_to(m)
