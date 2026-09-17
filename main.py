@@ -77,7 +77,7 @@ def generate_all_category_items():
                 "lat": CITY_COORDS[city]["lat"],
                 "lon": CITY_COORDS[city]["lon"],
                 "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
-                "description": f"פריט איכותי ששייך לקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום.",
+                "description": f"פריט איכותי בקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום מראש.",
                 "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
                 "image_url": CATEGORY_IMAGES.get(cat, ""),
                 "status": "available",
@@ -201,20 +201,33 @@ if choice == "🛍️ לוח פריטים למסירה":
                 render_card(item, "board")
 
 elif choice == "🗺️ מפה ארצית אינטראקטיבית":
-    st.subheader("🗺️ מפה ארצית אינטראקטיבית")
-    st.write("לחץ על כל סמן (נקודה) במפה כדי לראות את כותרת הפריט, הקטגוריה והעיר:")
+    st.subheader("🗺️ מפה ארצית אינטראקטיבית וסינון לפי אזור")
     
-    # מפה נקייה וחופשית לחלוטין ללא שגיאות API
-    m = folium.Map(location=[31.8944, 34.8094], zoom_start=8)
+    # תפריט בחירת אזור מעל המפה שמתמקד אוטומטית בעיר הנבחרת
+    selected_map_city = st.selectbox("🎯 בחר אזור / עיר להתמקדות במפה:", ["כל הארץ"] + list(CITY_COORDS.keys()))
     
-    # פיזור חכם של הפריטים במפה כדי שכל פריט יקבל נקודה משלו ולא יתעטף על פריט אחר
-    for idx, item in enumerate(st.session_state['items']):
-        base_lat = item.get('lat', 31.8944)
-        base_lon = item.get('lon', 34.8094)
+    st.markdown("🔵 **כחול:** פריטים למסירה | 🔴 **אדום:** פריטים דרושים | *לחץ על כל נקודה במפה לפרטי החפץ*")
+    
+    # הגדרת מרכז המפה והזום בהתאם לעיר הנבחרת
+    if selected_map_city == "כל הארץ":
+        map_center = [31.8944, 34.8094]
+        zoom_level = 8
+        displayed_items = st.session_state['items']
+    else:
+        map_center = [CITY_COORDS[selected_map_city]["lat"], CITY_COORDS[selected_map_city]["lon"]]
+        zoom_level = 13
+        displayed_items = [i for i in st.session_state['items'] if i.get('location') == selected_map_city]
+    
+    # יצירת מפה אינטראקטיבית נקה (CartoDB Voyager - ללא טקסט בערבית)
+    m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="CartoDB voyager")
+    
+    for idx, item in enumerate(displayed_items):
+        base_lat = item.get('lat', map_center[0])
+        base_lon = item.get('lon', map_center[1])
         
-        # הוספת הזזה קטנה ומבוססת אינדקס כדי לפזר את הנקודות סביב העיר בצורה מושלמת
-        lat = base_lat + (idx * 0.0015 % 0.03) - 0.015
-        lon = base_lon + (idx * 0.0020 % 0.03) - 0.015
+        # פיזור עדין כדי שנקודות סמוכות לא יישבו אחת על השנייה בדיוק
+        lat = base_lat + (idx * 0.0012 % 0.025) - 0.012
+        lon = base_lon + (idx * 0.0015 % 0.025) - 0.012
         
         title = item.get('title', 'ללא כותרת')
         loc = item.get('location', 'ישראל')
@@ -227,22 +240,25 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
         </div>
         """
         
+        marker_color = "red" if item.get('type') == 'request' else "blue"
+        
         folium.Marker(
             location=[lat, lon],
             popup=folium.Popup(popup_html, max_width=250),
             tooltip=title,
-            icon=folium.Icon(color="red" if item.get('type') == 'request' else "blue", icon="info-sign")
+            icon=folium.Icon(color=marker_color, icon="info-sign")
         ).add_to(m)
         
     st_folium(m, width=1200, height=550)
     
     st.divider()
-    selected_city_filter = st.selectbox("או סנן פריטים לפי עיר ישירות:", ["הכל"] + list(CITY_COORDS.keys()))
-    city_items = st.session_state['items'] if selected_city_filter == "הכל" else [i for i in st.session_state['items'] if i.get('location') == selected_city_filter]
+    st.subheader(f"📌 פריטים באזור: {selected_map_city}")
     
-    if city_items:
+    if not displayed_items:
+        st.info("אין פריטים באזור זה כרגע.")
+    else:
         cols = st.columns(3)
-        for index, item in enumerate(reversed(city_items)):
+        for index, item in enumerate(reversed(displayed_items)):
             with cols[index % 3]:
                 render_card(item, "map_city")
 
@@ -320,7 +336,7 @@ elif choice == "🤖 מעבדה":
     if st.button("🚀 טען מחדש את כל התת-קטגוריות אוטומטית", type="primary"):
         st.session_state['items'] = generate_all_category_items()
         save_items(st.session_state['items'])
-        st.success("המאגר אופס ונוצר מחדש בהצלחה עם כיסוי מלא של כל התת-קטגוריות במפה!")
+        st.success("המאגר אופס ונוצר מחדש בהצלחה עם כיסוי מלא של כל התת-קטגוריות במפה ובקטגוריות!")
     if st.button("🗑️ איפוס מלא של הלוח"):
         st.session_state['items'] = []
         st.session_state['favorites'] = []
