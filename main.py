@@ -4,6 +4,8 @@ import os
 import base64
 import random
 import pandas as pd
+import folium
+from streamlit_folium import st_folium
 
 st.set_page_config(page_title="אגורה Pro", page_icon="♻️", layout="wide")
 
@@ -72,10 +74,10 @@ def generate_all_category_items():
                 "category": cat,
                 "sub_category": sub_cat,
                 "location": city,
-                "lat": CITY_COORDS[city]["lat"],
-                "lon": CITY_COORDS[city]["lon"],
+                "lat": CITY_COORDS[city]["lat"] + random.uniform(-0.01, 0.01),
+                "lon": CITY_COORDS[city]["lon"] + random.uniform(-0.01, 0.01),
                 "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
-                "description": f"פריט איכותי ששייך לקטגוריית {cat} תחת תת-קטגוריה {sub_cat}. איסוף נוח.",
+                "description": f"פריט איכותי ששייך לקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום.",
                 "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
                 "image_url": CATEGORY_IMAGES.get(cat, ""),
                 "status": "available",
@@ -123,7 +125,7 @@ st.title("♻️ אגורה Pro - פלטפורמת שיתוף חכמה")
 
 menu_options = [
     "🛍️ לוח פריטים למסירה", 
-    "🗺️ מפה ארצית וסינון לפי עיר", 
+    "🗺️ מפה ארצית אינטראקטיבית", 
     "🙏 פריטים דרושים", 
     "❤️ פריטים שמעניינים אותי", 
     "➕ פרסם מודעה", 
@@ -172,7 +174,7 @@ def render_card(item, unique_key_prefix):
             st.toast("נוסף לפריטים שמעניינים אותי!")
 
 if choice == "🛍️ לוח פריטים למסירה":
-    st.subheader("🛍️ לוח פריטים למסירה לפי קטגוריות")
+    st.subheader("🛍️ לוח פריטים למסירה לפי קטגוריות ותתי-קטגוריות")
     
     c1, c2 = st.columns(2)
     with c1:
@@ -198,32 +200,46 @@ if choice == "🛍️ לוח פריטים למסירה":
             with cols[index % 3]:
                 render_card(item, "board")
 
-elif choice == "🗺️ מפה ארצית וסינון לפי עיר":
-    st.subheader("🗺️ מפה ארצית ופירוט לפי עיר")
-    st.write("בחר עיר מהתפריט הבא כדי לראות את כל החפצים והמודעות ששייכים אליה באותו אזור:")
+elif choice == "🗺️ מפה ארצית אינטראקטיבית":
+    st.subheader("🗺️ מפה ארצית אינטראקטיבית")
+    st.write("לחץ על כל סמן (נקודה) במפה כדי לראות את פרטי החפץ, הכותרת והעיר:")
     
-    selected_city_filter = st.selectbox("בחר עיר", list(CITY_COORDS.keys()))
+    # יצירת מפה מתקדמת עם Folium
+    m = folium.Map(location=[31.8944, 34.8094], zoom_start=8, tiles="CartoDB dark_matter")
     
-    map_data = []
     for item in st.session_state['items']:
-        city = item.get('location', 'תל אביב')
-        coords = CITY_COORDS.get(city, {"lat": 32.0853, "lon": 34.7818})
-        map_data.append({"lat": coords["lat"] + random.uniform(-0.002, 0.002), "lon": coords["lon"] + random.uniform(-0.002, 0.002)})
-    if map_data:
-        st.map(pd.DataFrame(map_data), latitude="lat", longitude="lon", size=30, color="#3b82f6")
+        lat = item.get('lat', 31.8944)
+        lon = item.get('lon', 34.8094)
+        title = item.get('title', 'ללא כותרת')
+        loc = item.get('location', 'ישראל')
+        cat = item.get('category', '')
+        
+        popup_html = f"""
+        <div style="direction: rtl; text-align: right; font-family: sans-serif; width: 180px;">
+            <b>{title}</b><br>
+            <span style="color: #666; font-size: 0.8rem;">📍 {loc} | {cat}</span>
+        </div>
+        """
+        
+        folium.Marker(
+            location=[lat, lon],
+            popup=folium.Popup(popup_html, max_width=250),
+            tooltip=title,
+            icon=folium.Icon(color="blue", icon="info-sign")
+        ).add_to(m)
+        
+    # הצגת המפה האינטראקטיבית באפליקציה
+    st_folium(m, width=1200, height=550)
     
     st.divider()
-    st.subheader(f"📌 כל הפריטים והמודעות בעיר: {selected_city_filter}")
+    selected_city_filter = st.selectbox("או סנן פריטים לפי עיר ישירות:", ["הכל"] + list(CITY_COORDS.keys()))
+    city_items = st.session_state['items'] if selected_city_filter == "הכל" else [i for i in st.session_state['items'] if i.get('location') == selected_city_filter]
     
-    city_items = [i for i in st.session_state['items'] if i.get('location') == selected_city_filter]
-    
-    if not city_items:
-        st.info(f"אין כרגע פריטים פעילים בעיר {selected_city_filter}.")
-    else:
+    if city_items:
         cols = st.columns(3)
         for index, item in enumerate(reversed(city_items)):
             with cols[index % 3]:
-                render_card(item, "city_map")
+                render_card(item, "map_city")
 
 elif choice == "🙏 פריטים דרושים":
     st.subheader("🙏 פריטים דרושים ובקשות מהקהילה")
@@ -279,8 +295,8 @@ elif choice == "➕ פרסם מודעה":
                 "category": main_cat,
                 "sub_category": sub_cat,
                 "location": city,
-                "lat": coords["lat"],
-                "lon": coords["lon"],
+                "lat": coords["lat"] + random.uniform(-0.01, 0.01),
+                "lon": coords["lon"] + random.uniform(-0.01, 0.01),
                 "description": desc,
                 "phone": phone,
                 "image": img_str,
@@ -295,11 +311,11 @@ elif choice == "➕ פרסם מודעה":
 
 elif choice == "🤖 מעבדה":
     st.subheader("🤖 מעבדת בוטים ונתונים")
-    st.write("כאן תוכל לאפס את הנתונים ולייצר מחדש מאגר עשיר שמכיל פריט לכל תת-קטגוריה במערכת.")
+    st.write("כאן תוכל לאפס את הנתונים ולייצר מחדש מאגר עשיר הכולל בדיוק פריט לכל תת-קטגוריה קיימת במערכת.")
     if st.button("🚀 טען מחדש את כל התת-קטגוריות אוטומטית", type="primary"):
         st.session_state['items'] = generate_all_category_items()
         save_items(st.session_state['items'])
-        st.success("המאגר אופס ונוצר מחדש בהצלחה עם פריטים מכל התת-קטגוריות!")
+        st.success("המאגר אופס ונוצר מחדש בהצלחה עם כיסוי מלא של כל התת-קטגוריות!")
     if st.button("🗑️ איפוס מלא של הלוח"):
         st.session_state['items'] = []
         st.session_state['favorites'] = []
