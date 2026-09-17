@@ -3,6 +3,7 @@ import json
 import os
 import base64
 import random
+import math
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
@@ -31,7 +32,6 @@ CITY_COORDS = {
     "באר שבע": {"lat": 31.2529, "lon": 34.7915}
 }
 
-# גבולות גיאוגרפיים אמיתיים (פוליגונים) לערים המרכזיות במקום עיגולים פשוטים
 CITY_POLYGONS = {
     "רחובות": [
         [31.918, 34.795], [31.922, 34.812], [31.908, 34.828],
@@ -56,6 +56,14 @@ CATEGORY_IMAGES = {
     "שונות": "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?auto=format&fit=crop&w=600&q=80"
 }
 
+def calculate_distance(lat1, lon1, lat2, lon2):
+    R = 6371  # רדיוס כדור הארץ בקילומטרים
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return round(R * c, 1)
+
 def generate_all_category_items():
     bot_users = [
         {"name": "גיא_קדוש", "karma": 480, "verified": True},
@@ -65,10 +73,9 @@ def generate_all_category_items():
     ]
     
     generated = []
-    # ייצור של מספר פריטים לכל תת-קטגוריה כדי להבטיח מאגר עשיר ומלא לחלוטין בכל קטגוריה
     for cat, sub_list in CATEGORIES.items():
         for sub_cat in sub_list:
-            for _ in range(2):  # שני פריטים לכל תת-קטגוריה לפחות
+            for _ in range(2):
                 city = random.choice(list(CITY_COORDS.keys()))
                 user = random.choice(bot_users)
                 is_req = random.choice([True, False, False])
@@ -76,14 +83,14 @@ def generate_all_category_items():
                 generated.append({
                     "id": f"item_{random.randint(100000, 999999)}",
                     "type": "request" if is_req else "giveaway",
-                    "title": f"{sub_cat} איכותי במצב מעולה" if not is_req else f"דרוש בדחיפות: {sub_cat}",
+                    "title": f"{sub_cat} במצב מעולה" if not is_req else f"דרוש בדחיפות: {sub_cat}",
                     "category": cat,
                     "sub_category": sub_cat,
                     "location": city,
-                    "lat": CITY_COORDS[city]["lat"],
-                    "lon": CITY_COORDS[city]["lon"],
+                    "lat": CITY_COORDS[city]["lat"] + random.uniform(-0.01, 0.01),
+                    "lon": CITY_COORDS[city]["lon"] + random.uniform(-0.01, 0.01),
                     "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
-                    "description": f"פריט מצוין מקטגוריית {cat} תחת תת-קטגוריה {sub_cat}. איסוף נוח בתיאום מראש.",
+                    "description": f"פריט איכותי בקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום מראש.",
                     "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
                     "image_url": CATEGORY_IMAGES.get(cat, ""),
                     "status": "available",
@@ -144,6 +151,7 @@ st.title("♻️ אגורה Pro - פלטפורמת שיתוף חכמה")
 menu_options = [
     "🛍️ לוח פריטים למסירה", 
     "🗺️ מפה ארצית אינטראקטיבית", 
+    "🤖 סוכן חכם למציאת חפצים", 
     "🙏 פריטים דרושים", 
     "❤️ פריטים שמעניינים אותי", 
     "➕ פרסם מודעה", 
@@ -152,7 +160,7 @@ menu_options = [
 choice = st.selectbox("🧭 תפריט ניווט מהיר", menu_options, label_visibility="collapsed")
 st.divider()
 
-def render_card(item, unique_key_prefix):
+def render_card(item, unique_key_prefix, extra_info=""):
     owner = item.get('owner', {"name": "משתמש", "karma": 10, "verified": True})
     verified_icon = "✔️" if owner.get('verified') else ""
     views = item.get('views', 15)
@@ -176,6 +184,7 @@ def render_card(item, unique_key_prefix):
 {hot_tag}
 <span class="badge">{item.get('sub_category', item.get('category'))}</span>
 <span class="badge" style="background:rgba(16, 185, 129, 0.2); color:#6ee7b7; border-color:rgba(16, 185, 129, 0.4);">📍 {item.get('location')}</span>
+{f'<span class="badge" style="background:rgba(234, 179, 8, 0.2); color:#fde047;">🚗 {extra_info}</span>' if extra_info else ''}
 </div>
 <p style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 15px; height: 40px; overflow: hidden;">{item.get('description')}</p>
 <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 10px;">👁️ {views} צפיות</div>
@@ -206,9 +215,9 @@ if choice == "🛍️ לוח פריטים למסירה":
     all_items = [i for i in st.session_state['items'] if i.get('type', 'giveaway') == 'giveaway']
     
     if selected_main_cat != "הכל":
-        all_items = [i for i in all_items if i.get('category'] == selected_main_cat]
+        all_items = [i for i in all_items if i.get('category') == selected_main_cat]
     if selected_sub_cat != "הכל":
-        all_items = [i for i in all_items if i.get('sub_category'] == selected_sub_cat]
+        all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
         
     if not all_items:
         st.info("אין פריטים תחת הסינון הזה.")
@@ -236,7 +245,6 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
     
     m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="OpenStreetMap")
     
-    # ציור גבול עירוני אמיתי (פוליגון) במקום עיגול פשוט אם קיים לעיר
     if selected_map_city != "כל הארץ" and selected_map_city in CITY_POLYGONS:
         folium.Polygon(
             locations=CITY_POLYGONS[selected_map_city],
@@ -287,6 +295,49 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
         for index, item in enumerate(reversed(displayed_items)):
             with cols[index % 3]:
                 render_card(item, "map_city")
+
+elif choice == "🤖 סוכן חכם למציאת חפצים":
+    st.subheader("🤖 הסוכן החכם – מציאת פריטים לפי מרחק ומיקום")
+    st.write("הגדר את המיקום שלך ואיזה פריט אתה מחפש. הסוכן יסרוק את כל המאגר ויציג לך את התוצאות מהקרוב ביותר לרחוק ביותר עם חישוב מרחק מדויק בקילומטרים!")
+    
+    col_agent1, col_agent2 = st.columns(2)
+    with col_agent1:
+        user_city = st.selectbox("📍 בחר את אזור המגורים שלך:", list(CITY_COORDS.keys()), index=0) # ברירת מחדל רחובות
+    with col_agent2:
+        search_query = st.text_input("🔍 מה הפריט שאתה מחפש?", placeholder="למשל: ספה, מכונת כביסה, ESP32...")
+        
+    if search_query:
+        user_coords = CITY_COORDS[user_city]
+        
+        # חישוב מרחקים ומיון מהקרוב לרחוק
+        scored_items = []
+        for item in st.session_state['items']:
+            # בדיקת התאמה לפי חיפוש טקסט בכותרת, תיאור או קטגוריה
+            title = item.get('title', '')
+            desc = item.get('description', '')
+            sub_cat = item.get('sub_category', '')
+            cat = item.get('category', '')
+            
+            if search_query.lower() in title.lower() or search_query.lower() in desc.lower() or search_query.lower() in sub_cat.lower() or search_query.lower() in cat.lower():
+                item_lat = item.get('lat', user_coords['lat'])
+                item_lon = item.get('lon', user_coords['lon'])
+                dist = calculate_distance(user_coords['lat'], user_coords['lon'], item_lat, item_lon)
+                scored_items.append((dist, item))
+                
+        # מיון מהקרוב ביותר לרחוק ביותר (מה שקרוב אליך קודם, ומתקדם החוצה בהדרגה)
+        scored_items.sort(key=lambda x: x[0])
+        
+        st.divider()
+        st.markdown(### תוצאות החיפוש עבור: '{search_query}' מתוך {user_city})
+        
+        if not scored_items:
+            st.warning("לא נמצאו פריטים התואמים לחיפוש שלך במאגר. נסה לחפש מילת מפתח אחרת או טען נתונים במעבדה.")
+        else:
+            st.success(f"מצאנו {len(scored_items)} פריטים! מסודרים מהקרוב ביותר לרחוק ביותר ממך:")
+            cols = st.columns(3)
+            for index, (dist, item) in enumerate(scored_items):
+                with cols[index % 3]:
+                    render_card(item, "smart_agent", extra_info=f"{dist} ק\"מ ממך ({item.get('location')})")
 
 elif choice == "🙏 פריטים דרושים":
     st.subheader("🙏 פריטים דרושים ובקשות מהקהילה")
