@@ -70,7 +70,6 @@ def generate_bot_items():
     ]
     
     new_bot_items = []
-    # ייצור פריט אחד לפחות מכל תת-קטגוריה כדי להבטיח כיסוי מלא של כל המערכת
     for cat, sub_list in CATEGORIES.items():
         for sub_cat in sub_list:
             city = random.choice(list(CITY_COORDS.keys()))
@@ -172,7 +171,6 @@ def render_card(item, unique_key_prefix):
 </div>"""
     st.markdown(card_html, unsafe_allow_html=True)
     
-    # כפתור שמירה בטוח עם מפתח ייחודי לחלוטין
     item_id = item.get('id', str(random.randint(1000,9999)))
     if st.button("❤️ שמור", key=f"fav_{unique_key_prefix}_{item_id}"):
         if item not in st.session_state['favorites']:
@@ -228,7 +226,12 @@ elif choice == "🗺️ מפה ארצית וחפצים לפי עיר":
     
     st.divider()
     st.subheader(f"פריטים בעיר: {selected_city_filter}")
-    city_items = st.session_state['items'] if selected_city_filter == "הכל" else [i for i in st.session_state['items'] if i.get('location'] == selected_city_filter]
+    
+    # תוקן תחביר הסינון של הערים בצורה נקייה ובטוחה
+    if selected_city_filter == "הכל":
+        city_items = st.session_state['items']
+    else:
+        city_items = [i for i in st.session_state['items'] if i.get('location') == selected_city_filter]
     
     if not city_items:
         st.info("אין פריטים רשומים בעיר זו כרגע.")
