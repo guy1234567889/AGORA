@@ -203,31 +203,29 @@ if choice == "🛍️ לוח פריטים למסירה":
 elif choice == "🗺️ מפה ארצית אינטראקטיבית":
     st.subheader("🗺️ מפה ארצית אינטראקטיבית וסינון לפי אזור")
     
-    # תפריט בחירת אזור מעל המפה שמתמקד אוטומטית בעיר הנבחרת
     selected_map_city = st.selectbox("🎯 בחר אזור / עיר להתמקדות במפה:", ["כל הארץ"] + list(CITY_COORDS.keys()))
     
     st.markdown("🔵 **כחול:** פריטים למסירה | 🔴 **אדום:** פריטים דרושים | *לחץ על כל נקודה במפה לפרטי החפץ*")
     
-    # הגדרת מרכז המפה והזום בהתאם לעיר הנבחרת
+    # הגדרת זום-IN חכם בהתאם לעיר הנבחרת
     if selected_map_city == "כל הארץ":
         map_center = [31.8944, 34.8094]
         zoom_level = 8
         displayed_items = st.session_state['items']
     else:
         map_center = [CITY_COORDS[selected_map_city]["lat"], CITY_COORDS[selected_map_city]["lon"]]
-        zoom_level = 13
+        zoom_level = 13  # זום-IN קרוב מאוד על העיר הנבחרת!
         displayed_items = [i for i in st.session_state['items'] if i.get('location') == selected_map_city]
     
-    # יצירת מפה אינטראקטיבית נקה (CartoDB Voyager - ללא טקסט בערבית)
-    m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="CartoDB voyager")
+    # שימוש במפת OpenStreetMap חופשית לחלוטין ללא שום בקשות מפתח API
+    m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="OpenStreetMap")
     
     for idx, item in enumerate(displayed_items):
         base_lat = item.get('lat', map_center[0])
         base_lon = item.get('lon', map_center[1])
         
-        # פיזור עדין כדי שנקודות סמוכות לא יישבו אחת על השנייה בדיוק
-        lat = base_lat + (idx * 0.0012 % 0.025) - 0.012
-        lon = base_lon + (idx * 0.0015 % 0.025) - 0.012
+        lat = base_lat + (idx * 0.0012 % 0.02) - 0.01
+        lon = base_lon + (idx * 0.0015 % 0.02) - 0.01
         
         title = item.get('title', 'ללא כותרת')
         loc = item.get('location', 'ישראל')
