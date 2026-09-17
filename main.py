@@ -42,26 +42,16 @@ def load_items():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             items = json.load(f)
-            for idx, item in enumerate(items):
-                if 'id' not in item or not item['id']:
-                    item['id'] = f"item_{idx}_{random.randint(1000,9999)}"
-                if 'sub_category' not in item:
-                    item['sub_category'] = "כללי"
-                if 'phone' not in item:
-                    item['phone'] = "0501234567"
-            return items
-    return []
+            if items:
+                return items
+    # אם הקובץ ריק או לא קיים, נייצר מיד את כל הפריטים מכל התת-קטגוריות אוטומטית!
+    return generate_all_category_items()
 
 def save_items(items):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(items, f, ensure_ascii=False, indent=4)
 
-if 'items' not in st.session_state:
-    st.session_state['items'] = load_items()
-if 'favorites' not in st.session_state:
-    st.session_state['favorites'] = []
-
-def generate_bot_items():
+def generate_all_category_items():
     bot_users = [
         {"name": "גיא_קדוש", "karma": 480, "verified": True},
         {"name": "ליאת_מנהלת", "karma": 350, "verified": True},
@@ -69,24 +59,25 @@ def generate_bot_items():
         {"name": "אלכס_מהנדס", "karma": 75, "verified": True}
     ]
     
-    new_bot_items = []
+    generated = []
+    # מעבר מובטח על כל קטגוריה וכל תת-קטגוריה כדי שלא תישאר פינה ריקה
     for cat, sub_list in CATEGORIES.items():
         for sub_cat in sub_list:
             city = random.choice(list(CITY_COORDS.keys()))
             user = random.choice(bot_users)
             is_req = random.choice([True, False, False])
             
-            new_bot_items.append({
-                "id": f"bot_{random.randint(100000, 999999)}",
+            generated.append({
+                "id": f"item_{random.randint(100000, 999999)}",
                 "type": "request" if is_req else "giveaway",
                 "title": f"{sub_cat} במצב מעולה" if not is_req else f"דרוש בדחיפות {sub_cat}",
                 "category": cat,
                 "sub_category": sub_cat,
                 "location": city,
-                "lat": CITY_COORDS[city]["lat"] + random.uniform(-0.01, 0.01),
-                "lon": CITY_COORDS[city]["lon"] + random.uniform(-0.01, 0.01),
+                "lat": CITY_COORDS[city]["lat"],
+                "lon": CITY_COORDS[city]["lon"],
                 "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
-                "description": f"פריט איכותי מקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום.",
+                "description": f"פריט איכותי ששייך לקטגוריית {cat} תחת תת-קטגוריה {sub_cat}. איסוף נוח.",
                 "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
                 "image_url": CATEGORY_IMAGES.get(cat, ""),
                 "status": "available",
@@ -94,7 +85,12 @@ def generate_bot_items():
                 "owner": user,
                 "is_bot": True
             })
-    return new_bot_items
+    return generated
+
+if 'items' not in st.session_state:
+    st.session_state['items'] = load_items()
+if 'favorites' not in st.session_state:
+    st.session_state['favorites'] = []
 
 st.markdown("""
     <style>
@@ -129,7 +125,7 @@ st.title("♻️ אגורה Pro - פלטפורמת שיתוף חכמה")
 
 menu_options = [
     "🛍️ לוח פריטים למסירה", 
-    "🗺️ מפה ארצית וחפצים לפי עיר", 
+    "🗺️ מפה ארצית וסינון לפי עיר", 
     "🙏 פריטים דרושים", 
     "❤️ פריטים שמעניינים אותי", 
     "➕ פרסם מודעה", 
@@ -178,7 +174,7 @@ def render_card(item, unique_key_prefix):
             st.toast("נוסף לפריטים שמעניינים אותי!")
 
 if choice == "🛍️ לוח פריטים למסירה":
-    st.subheader("🛍️ לוח פריטים למסירה")
+    st.subheader("🛍️ לוח פריטים למסירה לפי קטגוריות")
     
     c1, c2 = st.columns(2)
     with c1:
@@ -192,49 +188,40 @@ if choice == "🛍️ לוח פריטים למסירה":
     all_items = [i for i in st.session_state['items'] if i.get('type', 'giveaway') == 'giveaway']
     
     if selected_main_cat != "הכל":
-        all_items = [i for i in all_items if i.get('category') == selected_main_cat]
+        all_items = [i for i in all_items if i.get('category'] == selected_main_cat]
     if selected_sub_cat != "הכל":
         all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
         
     if not all_items:
-        st.info("אין פריטים תחת הסינון הזה. כנס למעבדה ולייצר נתונים!")
+        st.info("אין פריטים תחת הסינון הזה.")
     else:
         cols = st.columns(3)
         for index, item in enumerate(reversed(all_items)):
             with cols[index % 3]:
                 render_card(item, "board")
 
-elif choice == "🗺️ מפה ארצית וחפצים לפי עיר":
-    st.subheader("🗺️ מפה ארצית וסינון לפי עיר")
-    st.write("בחר עיר מהרשימה כדי לראות בדיוק אילו פריטים מחכים לך באזור:")
+elif choice == "🗺️ מפה ארצית וסינון לפי עיר":
+    st.subheader("🗺️ מפה ארצית ופירוט לפי עיר")
+    st.write("בחר עיר מהתפריט הבא כדי לראות את כל החפצים והמודעות ששייכים אליה באותו אזור:")
     
-    selected_city_filter = st.selectbox("בחר עיר לצפייה בפריטים", ["הכל"] + list(CITY_COORDS.keys()))
+    selected_city_filter = st.selectbox("בחר עיר", list(CITY_COORDS.keys()))
     
+    # הצגת המפה הכללית ברקע
     map_data = []
     for item in st.session_state['items']:
         city = item.get('location', 'תל אביב')
         coords = CITY_COORDS.get(city, {"lat": 32.0853, "lon": 34.7818})
-        map_data.append({
-            "lat": coords["lat"] + random.uniform(-0.003, 0.003),
-            "lon": coords["lon"] + random.uniform(-0.003, 0.003),
-            "name": item.get('title'),
-            "city": city
-        })
-        
+        map_data.append({"lat": coords["lat"] + random.uniform(-0.002, 0.002), "lon": coords["lon"] + random.uniform(-0.002, 0.002)})
     if map_data:
-        st.map(pd.DataFrame(map_data), latitude="lat", longitude="lon", size=40, color="#3b82f6")
+        st.map(pd.DataFrame(map_data), latitude="lat", longitude="lon", size=30, color="#3b82f6")
     
     st.divider()
-    st.subheader(f"פריטים בעיר: {selected_city_filter}")
+    st.subheader(f"📌 כל הפריטים והמודעות בעיר: {selected_city_filter}")
     
-    # תוקן תחביר הסינון של הערים בצורה נקייה ובטוחה
-    if selected_city_filter == "הכל":
-        city_items = st.session_state['items']
-    else:
-        city_items = [i for i in st.session_state['items'] if i.get('location') == selected_city_filter]
+    city_items = [i for i in st.session_state['items'] if i.get('location') == selected_city_filter]
     
     if not city_items:
-        st.info("אין פריטים רשומים בעיר זו כרגע.")
+        st.info(f"אין כרגע פריטים פעילים בעיר {selected_city_filter}.")
     else:
         cols = st.columns(3)
         for index, item in enumerate(reversed(city_items)):
@@ -261,12 +248,14 @@ elif choice == "❤️ פריטים שמעניינים אותי":
         for index, item in enumerate(st.session_state['favorites']):
             with cols[index % 3]:
                 render_card(item, "favs")
-                if st.button("❌ הסר", key=f"rem_{item.get('id', random.randint(1000,9999))}"):
+                item_id = item.get('id', random.randint(1000,9999))
+                if st.button("❌ הסר", key=f"rem_{item_id}"):
                     st.session_state['favorites'].remove(item)
+                    save_items(st.session_state['items'])
                     st.rerun()
 
 elif choice == "➕ פרסם מודעה":
-    st.subheader("➕ פרסום פריט חדש למערכת")
+    st.subheader("➕ פרסם פריט חדש למערכת")
     with st.form("new_ad_form", clear_on_submit=True):
         ad_type = st.radio("סוג מודעה", ["מסירה (Giveaway)", "בקשה (Request)"])
         title = st.text_input("כותרת הפריט")
@@ -309,13 +298,13 @@ elif choice == "➕ פרסם מודעה":
 
 elif choice == "🤖 מעבדה":
     st.subheader("🤖 מעבדת בוטים ונתונים")
-    if st.button("🚀 טען פריטים מכל הקטגוריות ותתי-הקטגוריות", type="primary"):
-        new_bots = generate_bot_items()
-        st.session_state['items'].extend(new_bots)
+    st.write("כאן תוכל לאפס את הנתונים ולייצר מחדש מאגר עשיר שמכיל פריט לכל תת-קטגוריה במערכת.")
+    if st.button("🚀 טען מחדש את כל התת-קטגוריות אוטומטית", type="primary"):
+        st.session_state['items'] = generate_all_category_items()
         save_items(st.session_state['items'])
-        st.success(f"נוספו בהצלחה {len(new_bots)} פריטים המכסים את כל הקטגוריות ותתי-הקטגוריות במערכת!")
-    if st.button("🗑️ איפוס מסד נתונים"):
+        st.success("המאגר אופס ונוצר מחדש בהצלחה עם פריטים מכל התת-קטגוריות!")
+    if st.button("🗑️ איפוס מלא של הלוח"):
         st.session_state['items'] = []
         st.session_state['favorites'] = []
         save_items([])
-        st.warning("הכל אופס.")
+        st.warning("הלוח אופס לגמרי.")
