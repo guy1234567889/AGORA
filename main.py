@@ -66,7 +66,6 @@ def simulate_bot_interactions():
     ]
     
     for item in selected_items:
-        # תיקון הקריסה: הגנה למודעות ישנות שאין להן שדה תגובות
         if 'comments' not in item:
             item['comments'] = []
             
@@ -135,21 +134,20 @@ if choice == "🛍️ הלוח המרכזי":
                 bubble_class = "chat-bubble owner" if comment['user'] == "מוסר החפץ" else "chat-bubble"
                 chat_html += f"<div class='{bubble_class}'><strong>{comment['user']}:</strong> {comment['text']} <span style='color:#888; font-size:0.7rem;'>({comment['time']})</span></div>"
                 
-            st.markdown(f"""
-            <div class="{card_class}">
-                <h3 class="card-title">{item.get('title', 'ללא שם')}</h3>
-                <div>
-                    <span class="badge">{item.get('category', '')}</span>
-                    <span class="badge location-badge">📍 {item.get('location', '')}</span>
-                    {status_badge}
-                </div>
-                <p style="color: #cbd5e1; font-size: 0.95rem;">{item.get('description', '')}</p>
-                
-                <div style="margin-top: 15px;">
-                    {chat_html}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # HTML String exactly left-aligned to avoid Markdown Code-Block interpretation
+            card_html = f"""<div class="{card_class}">
+<h3 class="card-title">{item.get('title', 'ללא שם')}</h3>
+<div>
+<span class="badge">{item.get('category', '')}</span>
+<span class="badge location-badge">📍 {item.get('location', '')}</span>
+{status_badge}
+</div>
+<p style="color: #cbd5e1; font-size: 0.95rem;">{item.get('description', '')}</p>
+<div style="margin-top: 15px;">
+{chat_html}
+</div>
+</div>"""
+            st.markdown(card_html, unsafe_allow_html=True)
             st.write("") 
 
 elif choice == "➕ פרסום מודעה חדשה":
