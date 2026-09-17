@@ -29,7 +29,6 @@ CITY_COORDS = {
     "באר שבע": {"lat": 31.2529, "lon": 34.7915}
 }
 
-# תמונות המחשה אמיתיות לפי קטגוריה שיראו מוחשי לגמרי
 CATEGORY_IMAGES = {
     "רהיטים": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80",
     "מוצרי חשמל": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=600&q=80",
@@ -43,9 +42,9 @@ def load_items():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             items = json.load(f)
-            for item in items:
-                if 'id' not in item:
-                    item['id'] = str(random.randint(100000, 999999))
+            for idx, item in enumerate(items):
+                if 'id' not in item or not item['id']:
+                    item['id'] = f"item_{idx}_{random.randint(1000,9999)}"
                 if 'sub_category' not in item:
                     item['sub_category'] = "כללי"
                 if 'phone' not in item:
@@ -62,7 +61,7 @@ if 'items' not in st.session_state:
 if 'favorites' not in st.session_state:
     st.session_state['favorites'] = []
 
-def generate_bot_items(num_items=10):
+def generate_bot_items():
     bot_users = [
         {"name": "גיא_קדוש", "karma": 480, "verified": True},
         {"name": "ליאת_מנהלת", "karma": 350, "verified": True},
@@ -71,31 +70,31 @@ def generate_bot_items(num_items=10):
     ]
     
     new_bot_items = []
-    for _ in range(num_items):
-        cat = random.choice(list(CATEGORIES.keys()))
-        sub_cat = random.choice(CATEGORIES[cat])
-        city = random.choice(list(CITY_COORDS.keys()))
-        user = random.choice(bot_users)
-        is_req = random.choice([True, False])
-        
-        new_bot_items.append({
-            "id": str(random.randint(100000, 999999)),
-            "type": "request" if is_req else "giveaway",
-            "title": f"{sub_cat} במצב מעולה" if not is_req else f"דרוש בדחיפות {sub_cat}",
-            "category": cat,
-            "sub_category": sub_cat,
-            "location": city,
-            "lat": CITY_COORDS[city]["lat"] + random.uniform(-0.01, 0.01),
-            "lon": CITY_COORDS[city]["lon"] + random.uniform(-0.01, 0.01),
-            "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
-            "description": "הועלה אוטומטית מהמערכת. איסוף נוח בתיאום מראש.",
-            "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
-            "image_url": CATEGORY_IMAGES.get(cat, ""),
-            "status": "available",
-            "views": random.randint(10, 250),
-            "owner": user,
-            "is_bot": True
-        })
+    # ייצור פריט אחד לפחות מכל תת-קטגוריה כדי להבטיח כיסוי מלא של כל המערכת
+    for cat, sub_list in CATEGORIES.items():
+        for sub_cat in sub_list:
+            city = random.choice(list(CITY_COORDS.keys()))
+            user = random.choice(bot_users)
+            is_req = random.choice([True, False, False])
+            
+            new_bot_items.append({
+                "id": f"bot_{random.randint(100000, 999999)}",
+                "type": "request" if is_req else "giveaway",
+                "title": f"{sub_cat} במצב מעולה" if not is_req else f"דרוש בדחיפות {sub_cat}",
+                "category": cat,
+                "sub_category": sub_cat,
+                "location": city,
+                "lat": CITY_COORDS[city]["lat"] + random.uniform(-0.01, 0.01),
+                "lon": CITY_COORDS[city]["lon"] + random.uniform(-0.01, 0.01),
+                "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
+                "description": f"פריט איכותי מקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום.",
+                "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
+                "image_url": CATEGORY_IMAGES.get(cat, ""),
+                "status": "available",
+                "views": random.randint(10, 250),
+                "owner": user,
+                "is_bot": True
+            })
     return new_bot_items
 
 st.markdown("""
@@ -127,7 +126,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# כותרת ראשית ותפריט עליון (Top Bar) מודרני
 st.title("♻️ אגורה Pro - פלטפורמת שיתוף חכמה")
 
 menu_options = [
@@ -141,14 +139,13 @@ menu_options = [
 choice = st.selectbox("🧭 תפריט ניווט מהיר", menu_options, label_visibility="collapsed")
 st.divider()
 
-def render_card(item):
+def render_card(item, unique_key_prefix):
     owner = item.get('owner', {"name": "משתמש", "karma": 10, "verified": True})
     verified_icon = "✔️" if owner.get('verified') else ""
     views = item.get('views', 15)
     hot_tag = '<span class="badge hot-badge">🔥 מבוקש</span>' if views > 100 else ""
     phone = item.get('phone', '0501234567')
     
-    # הצגת תמונה אמיתית (מתוך קובץ שהועלה או תמונת המחשה לפי קטגוריה)
     img_src = item.get('image_url') or CATEGORY_IMAGES.get(item.get('category'), "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?auto=format&fit=crop&w=600&q=80")
     if item.get('image'):
         try:
@@ -174,6 +171,13 @@ def render_card(item):
 </a>
 </div>"""
     st.markdown(card_html, unsafe_allow_html=True)
+    
+    # כפתור שמירה בטוח עם מפתח ייחודי לחלוטין
+    item_id = item.get('id', str(random.randint(1000,9999)))
+    if st.button("❤️ שמור", key=f"fav_{unique_key_prefix}_{item_id}"):
+        if item not in st.session_state['favorites']:
+            st.session_state['favorites'].append(item)
+            st.toast("נוסף לפריטים שמעניינים אותי!")
 
 if choice == "🛍️ לוח פריטים למסירה":
     st.subheader("🛍️ לוח פריטים למסירה")
@@ -195,16 +199,12 @@ if choice == "🛍️ לוח פריטים למסירה":
         all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
         
     if not all_items:
-        st.info("אין פריטים תחת הסינון הזה. כנס למעבדה ולייץ נתונים!")
+        st.info("אין פריטים תחת הסינון הזה. כנס למעבדה ולייצר נתונים!")
     else:
         cols = st.columns(3)
         for index, item in enumerate(reversed(all_items)):
             with cols[index % 3]:
-                render_card(item)
-                if st.button("❤️ שמור", key=f"fav_board_{item['id']}"):
-                    if item not in st.session_state['favorites']:
-                        st.session_state['favorites'].append(item)
-                        st.toast("נוסף לפריטים שמעניינים אותי!")
+                render_card(item, "board")
 
 elif choice == "🗺️ מפה ארצית וחפצים לפי עיר":
     st.subheader("🗺️ מפה ארצית וסינון לפי עיר")
@@ -228,7 +228,7 @@ elif choice == "🗺️ מפה ארצית וחפצים לפי עיר":
     
     st.divider()
     st.subheader(f"פריטים בעיר: {selected_city_filter}")
-    city_items = st.session_state['items'] if selected_city_filter == "הכל" else [i for i in st.session_state['items'] if i.get('location') == selected_city_filter]
+    city_items = st.session_state['items'] if selected_city_filter == "הכל" else [i for i in st.session_state['items'] if i.get('location'] == selected_city_filter]
     
     if not city_items:
         st.info("אין פריטים רשומים בעיר זו כרגע.")
@@ -236,7 +236,7 @@ elif choice == "🗺️ מפה ארצית וחפצים לפי עיר":
         cols = st.columns(3)
         for index, item in enumerate(reversed(city_items)):
             with cols[index % 3]:
-                render_card(item)
+                render_card(item, "city_map")
 
 elif choice == "🙏 פריטים דרושים":
     st.subheader("🙏 פריטים דרושים ובקשות מהקהילה")
@@ -247,7 +247,7 @@ elif choice == "🙏 פריטים דרושים":
         cols = st.columns(3)
         for index, item in enumerate(reversed(requests_items)):
             with cols[index % 3]:
-                render_card(item)
+                render_card(item, "requests")
 
 elif choice == "❤️ פריטים שמעניינים אותי":
     st.subheader("❤️ פריטים שמעניינים אותי")
@@ -257,12 +257,12 @@ elif choice == "❤️ פריטים שמעניינים אותי":
         cols = st.columns(3)
         for index, item in enumerate(st.session_state['favorites']):
             with cols[index % 3]:
-                render_card(item)
-                if st.button("❌ הסר", key=f"rem_{item['id']}"):
+                render_card(item, "favs")
+                if st.button("❌ הסר", key=f"rem_{item.get('id', random.randint(1000,9999))}"):
                     st.session_state['favorites'].remove(item)
                     st.rerun()
 
-elif choice == "➕ פרסום מודעה":
+elif choice == "➕ פרסם מודעה":
     st.subheader("➕ פרסום פריט חדש למערכת")
     with st.form("new_ad_form", clear_on_submit=True):
         ad_type = st.radio("סוג מודעה", ["מסירה (Giveaway)", "בקשה (Request)"])
@@ -284,7 +284,7 @@ elif choice == "➕ פרסום מודעה":
             coords = CITY_COORDS.get(city, {"lat": 32.0853, "lon": 34.7818})
             
             new_item = {
-                "id": str(random.randint(100000, 999999)),
+                "id": f"user_{random.randint(100000, 999999)}",
                 "type": "request" if "בקשה" in ad_type else "giveaway",
                 "title": title,
                 "category": main_cat,
@@ -306,11 +306,11 @@ elif choice == "➕ פרסום מודעה":
 
 elif choice == "🤖 מעבדה":
     st.subheader("🤖 מעבדת בוטים ונתונים")
-    if st.button("🚀 טען פריטים חדשים עם תמונות ואזורים (15 פריטים)", type="primary"):
-        new_bots = generate_bot_items(15)
+    if st.button("🚀 טען פריטים מכל הקטגוריות ותתי-הקטגוריות", type="primary"):
+        new_bots = generate_bot_items()
         st.session_state['items'].extend(new_bots)
         save_items(st.session_state['items'])
-        st.success("נוספו 15 פריטים עם תמונות המחשה מוחשיות!")
+        st.success(f"נוספו בהצלחה {len(new_bots)} פריטים המכסים את כל הקטגוריות ותתי-הקטגוריות במערכת!")
     if st.button("🗑️ איפוס מסד נתונים"):
         st.session_state['items'] = []
         st.session_state['favorites'] = []
