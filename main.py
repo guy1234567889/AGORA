@@ -1,6 +1,4 @@
-def main():
-    print("Hello from repl-nix-workspace!")
+import streamlit as st
 
-
-if __name__ == "__main__":
-    main()
+st.title("האפליקציה עובדת!")
+st.write("ברוך הבא למערכת החדשה שלך.")
