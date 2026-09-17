@@ -1,4 +1,8 @@
 import streamlit as st
 
-st.title("האפליקציה עובדת!")
-st.write("ברוך הבא למערכת החדשה שלך.")
+def main():
+    st.title("האפליקציה שלי")
+    st.write("Hello from Streamlit Cloud!")
+
+if __name__ == "__main__":
+    main()
