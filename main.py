@@ -66,13 +66,15 @@ def simulate_bot_interactions():
     ]
     
     for item in selected_items:
+        # תיקון הקריסה: הגנה למודעות ישנות שאין להן שדה תגובות
+        if 'comments' not in item:
+            item['comments'] = []
+            
         buyer = random.choice(bot_names)
         msg = random.choice(messages)
         
-        # בוט הקונה שולח הודעה
         item['comments'].append({"user": buyer, "text": msg, "time": datetime.now().strftime("%H:%M")})
         
-        # סיכוי של 50% שבוט המוכר יענה ויסגור את העסקה
         if random.choice([True, False]):
             item['comments'].append({
                 "user": "מוסר החפץ", 
