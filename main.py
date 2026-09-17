@@ -44,7 +44,6 @@ def load_items():
             items = json.load(f)
             if items:
                 return items
-    # אם הקובץ ריק או לא קיים, נייצר מיד את כל הפריטים מכל התת-קטגוריות אוטומטית!
     return generate_all_category_items()
 
 def save_items(items):
@@ -60,7 +59,6 @@ def generate_all_category_items():
     ]
     
     generated = []
-    # מעבר מובטח על כל קטגוריה וכל תת-קטגוריה כדי שלא תישאר פינה ריקה
     for cat, sub_list in CATEGORIES.items():
         for sub_cat in sub_list:
             city = random.choice(list(CITY_COORDS.keys()))
@@ -188,7 +186,7 @@ if choice == "🛍️ לוח פריטים למסירה":
     all_items = [i for i in st.session_state['items'] if i.get('type', 'giveaway') == 'giveaway']
     
     if selected_main_cat != "הכל":
-        all_items = [i for i in all_items if i.get('category'] == selected_main_cat]
+        all_items = [i for i in all_items if i.get('category') == selected_main_cat]
     if selected_sub_cat != "הכל":
         all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
         
@@ -206,7 +204,6 @@ elif choice == "🗺️ מפה ארצית וסינון לפי עיר":
     
     selected_city_filter = st.selectbox("בחר עיר", list(CITY_COORDS.keys()))
     
-    # הצגת המפה הכללית ברקע
     map_data = []
     for item in st.session_state['items']:
         city = item.get('location', 'תל אביב')
