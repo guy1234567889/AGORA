@@ -40,18 +40,6 @@ CATEGORY_IMAGES = {
     "שונות": "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?auto=format&fit=crop&w=600&q=80"
 }
 
-def load_items():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            items = json.load(f)
-            if items:
-                return items
-    return generate_all_category_items()
-
-def save_items(items):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=4)
-
 def generate_all_category_items():
     bot_users = [
         {"name": "גיא_קדוש", "karma": 480, "verified": True},
@@ -86,6 +74,19 @@ def generate_all_category_items():
                 "is_bot": True
             })
     return generated
+
+def load_items():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            items = json.load(f)
+            if items and len(items) > 10:
+                return items
+    # במידה וחסרים פריטים, מייצר מחדש כיסוי מלא של כל התת-קטגוריות
+    return generate_all_category_items()
+
+def save_items(items):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=4)
 
 if 'items' not in st.session_state:
     st.session_state['items'] = load_items()
@@ -207,19 +208,30 @@ elif choice == "🗺️ מפה ארצית אינטראקטיבית":
     
     st.markdown("🔵 **כחול:** פריטים למסירה | 🔴 **אדום:** פריטים דרושים | *לחץ על כל נקודה במפה לפרטי החפץ*")
     
-    # הגדרת זום-IN חכם בהתאם לעיר הנבחרת
     if selected_map_city == "כל הארץ":
         map_center = [31.8944, 34.8094]
         zoom_level = 8
         displayed_items = st.session_state['items']
     else:
         map_center = [CITY_COORDS[selected_map_city]["lat"], CITY_COORDS[selected_map_city]["lon"]]
-        zoom_level = 13  # זום-IN קרוב מאוד על העיר הנבחרת!
+        zoom_level = 13
         displayed_items = [i for i in st.session_state['items'] if i.get('location') == selected_map_city]
     
-    # שימוש במפת OpenStreetMap חופשית לחלוטין ללא שום בקשות מפתח API
     m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="OpenStreetMap")
     
+    # במידה ונבחרה עיר ספציפית, נצייר מעגל גבולות ויזואלי סביב העיר
+    if selected_map_city != "כל הארץ":
+        folium.Circle(
+            location=map_center,
+            radius=2500, # רדיוס של 2.5 ק"מ המקיף את העיר
+            color="#3b82f6",
+            weight=3,
+            fill=True,
+            fill_color="#3b82f6",
+            fill_opacity=0.1,
+            popup=f"גבולות אזור: {selected_map_city}"
+        ).add_to(m)
+
     for idx, item in enumerate(displayed_items):
         base_lat = item.get('lat', map_center[0])
         base_lon = item.get('lon', map_center[1])
@@ -289,7 +301,7 @@ elif choice == "❤️ פריטים שמעניינים אותי":
 elif choice == "➕ פרסם מודעה":
     st.subheader("➕ פרסם פריט חדש למערכת")
     with st.form("new_ad_form", clear_on_submit=True):
-        ad_type = st.radio("סוג מודעה", ["מסירה (Giveaway)", "בקשה (Request)"])
+        ad_type = ad_type = st.radio("סוג מודעה", ["מסירה (Giveaway)", "בקשה (Request)"])
         title = st.text_input("כותרת הפריט")
         
         c1, c2 = st.columns(2)
