@@ -8,14 +8,14 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 
-st.set_page_config(page_title="אגורה Pro", page_icon="♻️", layout="wide")
+st.set_page_config(page_title="אגורה Pro", page_icon="♻️", layout="wide", initial_sidebar_state="collapsed")
 
 DATA_FILE = "agora_data.json"
 
 CATEGORIES = {
     "רהיטים": ["ספות וסלון", "שולחנות וכיסאות", "ארונות ומדפים", "ריהוט לחדרי שינה"],
     "מוצרי חשמל": ["מכונות כביסה ומייבשים", "מקררים ומקפיאים", "מוצרי מטבח קטנים", "מזגנים ומאווררים"],
-    "אלקטרוניקה ומעבדה": ["ציוד מדידה ו-RF", "בקרים ומיקרו-בקרים (ESP32/Arduino)", "רכיבים ואביזרים", "טלפונים ומחשבים"],
+    "אלקטרוניקה ומעבדה": ["ציוד מדידה ו-RF", "בקרים ומיקרו-בקרים", "רכיבים ואביזרים", "טלפונים ומחשבים"],
     "ביגוד ואופנה": ["ביגוד גברים", "ביגוד נשים", "הנעלה", "אקססוריז"],
     "צעצועים וילדים": ["משחקי קופסה", "צעצועי התפתחות", "ציוד לתינוקות", "עגלות וטיולונים"],
     "שונות": ["כלי עבודה", "ציוד ספורט", "ספרים ומגזינים", "אחר"]
@@ -33,27 +33,8 @@ CITY_COORDS = {
 }
 
 CITY_POLYGONS = {
-    "רחובות": [
-        [31.918, 34.795], [31.922, 34.812], [31.908, 34.828],
-        [31.882, 34.830], [31.866, 34.812], [31.870, 34.788], [31.895, 34.782]
-    ],
-    "תל אביב": [
-        [32.125, 34.770], [32.115, 34.825], [32.045, 34.815],
-        [32.015, 34.765], [32.035, 34.742], [32.095, 34.740]
-    ],
-    "ראשון לציון": [
-        [31.995, 34.775], [32.000, 34.815], [31.950, 34.825],
-        [31.940, 34.780], [31.965, 34.755]
-    ]
-}
-
-CATEGORY_IMAGES = {
-    "רהיטים": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80",
-    "מוצרי חשמל": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=600&q=80",
-    "אלקטרוניקה ומעבדה": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
-    "ביגוד ואופנה": "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=600&q=80",
-    "צעצועים וילדים": "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=600&q=80",
-    "שונות": "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?auto=format&fit=crop&w=600&q=80"
+    "רחובות": [[31.918, 34.795], [31.922, 34.812], [31.908, 34.828], [31.882, 34.830], [31.866, 34.812], [31.870, 34.788], [31.895, 34.782]],
+    "תל אביב": [[32.125, 34.770], [32.115, 34.825], [32.045, 34.815], [32.015, 34.765], [32.035, 34.742], [32.095, 34.740]]
 }
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -64,49 +45,28 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return round(R * c, 1)
 
-def generate_all_category_items():
-    bot_users = [
-        {"name": "גיא_קדוש", "karma": 480, "verified": True},
-        {"name": "ליאת_מנהלת", "karma": 350, "verified": True},
-        {"name": "שירה_קליניקה", "karma": 190, "verified": False},
-        {"name": "אלכס_מהנדס", "karma": 75, "verified": True}
-    ]
+def validate_content(title, desc, main_cat):
+    # מנגנון סינון חכם למניעת העלאת ספאם, קללות, או פריטים לא קשורים
+    blocked_words = ["שטויות", "קללה", "דלורית", "זבל", "test", "בדיקה"]
+    text_to_check = (title + " " + desc).lower()
     
-    generated = []
-    for cat, sub_list in CATEGORIES.items():
-        for sub_cat in sub_list:
-            for _ in range(2):
-                city = random.choice(list(CITY_COORDS.keys()))
-                user = random.choice(bot_users)
-                is_req = random.choice([True, False, False])
-                
-                generated.append({
-                    "id": f"item_{random.randint(100000, 999999)}",
-                    "type": "request" if is_req else "giveaway",
-                    "title": f"{sub_cat} במצב מעולה" if not is_req else f"דרוש בדחיפות: {sub_cat}",
-                    "category": cat,
-                    "sub_category": sub_cat,
-                    "location": city,
-                    "lat": CITY_COORDS[city]["lat"] + random.uniform(-0.01, 0.01),
-                    "lon": CITY_COORDS[city]["lon"] + random.uniform(-0.01, 0.01),
-                    "condition": random.choice(["חדש לגמרי", "כמו חדש", "משומש"]),
-                    "description": f"פריט איכותי בקטגוריית {cat} ({sub_cat}). איסוף נוח בתיאום מראש.",
-                    "phone": f"05{random.randint(2,9)}{random.randint(1000000,9999999)}",
-                    "image_url": CATEGORY_IMAGES.get(cat, ""),
-                    "status": "available",
-                    "views": random.randint(10, 250),
-                    "owner": user,
-                    "is_bot": True
-                })
-    return generated
+    for word in blocked_words:
+        if word in text_to_check:
+            return False, f"המילה '{word}' חסומה לפרסום או אינה תואמת לכללי הקהילה."
+            
+    if main_cat == "אלקטרוניקה ומעבדה" and ("ספה" in text_to_check or "חולצה" in text_to_check):
+        return False, "נראה שיש חוסר התאמה בין תוכן המודעה לקטגוריית האלקטרוניקה שבחרת."
+        
+    if len(title) < 3:
+        return False, "כותרת המודעה קצרה מדי."
+        
+    return True, ""
 
 def load_items():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
-            items = json.load(f)
-            if items and len(items) > 30:
-                return items
-    return generate_all_category_items()
+            return json.load(f)
+    return []
 
 def save_items(items):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -119,253 +79,178 @@ if 'favorites' not in st.session_state:
 
 st.markdown("""
     <style>
-    .stApp {
-        background: linear-gradient(-45deg, #090d16, #111827, #1e1b4b, #030712);
-        background-size: 400% 400%; animation: gradientBG 20s ease infinite;
-    }
-    @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    header {background-color: transparent !important;}
-    .stApp, .stMarkdown, p, div, h1, h2, h3, span { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    
+    .stApp { background: #f8fafc; color: #0f172a; direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; }
     .product-card {
-        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); border-radius: 16px; padding: 18px; margin-bottom: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: transform 0.2s ease, border-color 0.2s; position: relative;
+        background: #ffffff; border-radius: 20px; padding: 20px; margin-bottom: 20px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        border: 1px solid #f1f5f9; transition: transform 0.2s ease, box-shadow 0.2s;
     }
-    .product-card:hover { border-color: #3b82f6; transform: translateY(-4px); }
-    
-    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.75rem; margin-left: 6px; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .hot-badge { background: linear-gradient(45deg, #ef4444, #f97316); color: white; border: none; font-weight: bold; }
-    
-    .user-info { font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
-    .whatsapp-btn {
-        display: block; text-align: center; background-color: #25D366; color: white !important;
-        padding: 8px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px; font-size: 0.9rem;
-    }
-    .whatsapp-btn:hover { background-color: #128C7E; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+    .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; background: #e0f2fe; color: #0284c7; font-size: 0.75rem; margin-left: 6px; font-weight: 600;}
+    .user-info { font-size: 0.85rem; color: #64748b; margin-bottom: 12px; }
+    .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+    .wa-btn { flex: 1; text-align: center; background: #25D366; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
+    .wa-btn:hover { background: #16a34a; }
+    .call-btn { flex: 1; text-align: center; background: #3b82f6; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
+    .call-btn:hover { background: #2563eb; }
+    .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
     </style>
 """, unsafe_allow_html=True)
 
-st.title("♻️ אגורה Pro - פלטפורמת שיתוף חכמה")
+st.title("♻️ אגורה Pro")
 
-menu_options = [
-    "🛍️ לוח פריטים למסירה", 
-    "🗺️ מפה ארצית אינטראקטיבית", 
-    "🤖 סוכן חכם למציאת חפצים", 
-    "🙏 פריטים דרושים", 
-    "❤️ פריטים שמעניינים אותי", 
-    "➕ פרסם מודעה", 
-    "🤖 מעבדה"
-]
-choice = st.selectbox("🧭 תפריט ניווט מהיר", menu_options, label_visibility="collapsed")
-st.divider()
+# תפריט ניווט פרימיום (מדמה תפריט אפליקציה)
+st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
+menu_options = ["🏠 דף הבית", "📍 מפה", "🔍 סוכן חיפוש", "➕ סוכן העלאה", "❤️ שמורים"]
+choice = st.radio("ניווט", menu_options, horizontal=True, label_visibility="collapsed")
+st.markdown('</div>', unsafe_allow_html=True)
 
 def render_card(item, unique_key_prefix, extra_info=""):
-    owner = item.get('owner', {"name": "משתמש", "karma": 10, "verified": True})
-    verified_icon = "✔️" if owner.get('verified') else ""
-    views = item.get('views', 15)
-    hot_tag = '<span class="badge hot-badge">🔥 מבוקש</span>' if views > 100 else ""
-    phone = item.get('phone', '0501234567')
+    owner = item.get('owner', {"name": "משתמש אנונימי", "karma": 0, "verified": False})
+    views = item.get('views', 1)
+    phone = item.get('phone', '')
+    wa_num = phone[1:] if phone.startswith('0') else phone
     
-    img_src = item.get('image_url') or CATEGORY_IMAGES.get(item.get('category'), "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?auto=format&fit=crop&w=600&q=80")
+    img_src = item.get('image_url') or "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
     if item.get('image'):
-        try:
-            img_src = f"data:image/png;base64,{item.get('image')}"
-        except:
-            pass
+        try: img_src = f"data:image/png;base64,{item.get('image')}"
+        except: pass
 
+    # עיצוב מחדש של הכרטיסיה - מראה נקי, שני כפתורי צור קשר, הצגת דירוג ריאלית
     card_html = f"""<div class="product-card">
-<img src="{img_src}" style="width:100%; height:150px; object-fit:cover; border-radius:10px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.1);"/>
+<img src="{img_src}" style="width:100%; height:180px; object-fit:cover; border-radius:15px; margin-bottom:15px;"/>
 <div class="user-info">
-👤 {owner.get('name')} <span style="color:#fbbf24;">⭐ {owner.get('karma')}</span> <span style="color:#38bdf8;">{verified_icon}</span>
+👤 {owner.get('name')} <span style="color:#fbbf24;">{'⭐ ' + str(owner.get('karma')) if owner.get('karma') > 0 else '🌟 משתמש חדש'}</span>
 </div>
-<h3 style="margin: 0 0 8px 0; color: #f8fafc; font-size: 1.2rem;">{item.get('title')}</h3>
-<div style="margin-bottom: 8px;">
-{hot_tag}
+<h3 style="margin: 0 0 10px 0; color: #0f172a; font-size: 1.3rem;">{item.get('title')}</h3>
+<div style="margin-bottom: 12px;">
 <span class="badge">{item.get('sub_category', item.get('category'))}</span>
-<span class="badge" style="background:rgba(16, 185, 129, 0.2); color:#6ee7b7; border-color:rgba(16, 185, 129, 0.4);">📍 {item.get('location')}</span>
-{f'<span class="badge" style="background:rgba(234, 179, 8, 0.2); color:#fde047;">🚗 {extra_info}</span>' if extra_info else ''}
+<span class="badge" style="background:#dcfce7; color:#166534;">📍 {item.get('location')}</span>
+{f'<span class="badge" style="background:#fef08a; color:#854d0e;">🚗 {extra_info}</span>' if extra_info else ''}
 </div>
-<p style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 15px; height: 40px; overflow: hidden;">{item.get('description')}</p>
-<div style="font-size: 0.75rem; color: #64748b; margin-bottom: 10px;">👁️ {views} צפיות</div>
-<a href="https://wa.me/972{phone[1:] if phone.startswith('0') else phone}" target="_blank" class="whatsapp-btn">
-💬 פנה בוואטסאפ ({phone})
-</a>
+<p style="color: #475569; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5;">{item.get('description')}</p>
+<div class="action-buttons">
+<a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ</a>
+<a href="tel:{phone}" class="call-btn">📞 התקשר</a>
+</div>
 </div>"""
     st.markdown(card_html, unsafe_allow_html=True)
     
     item_id = item.get('id', str(random.randint(1000,9999)))
-    if st.button("❤️ שמור", key=f"fav_{unique_key_prefix}_{item_id}"):
+    if st.button("❤️ שמור פריט", key=f"fav_{unique_key_prefix}_{item_id}", use_container_width=True):
         if item not in st.session_state['favorites']:
             st.session_state['favorites'].append(item)
-            st.toast("נוסף לפריטים שמעניינים אותי!")
+            st.toast("נשמר בהצלחה!")
 
-if choice == "🛍️ לוח פריטים למסירה":
-    st.subheader("🛍️ לוח פריטים למסירה לפי קטגוריות ותתי-קטגוריות")
-    
+if choice == "🏠 דף הבית":
+    st.subheader("לוח פריטים למסירה")
     c1, c2 = st.columns(2)
-    with c1:
-        selected_main_cat = st.selectbox("📂 בחר קטגוריה ראשית", ["הכל"] + list(CATEGORIES.keys()))
-    with c2:
-        sub_options = ["הכל"]
-        if selected_main_cat != "הכל":
-            sub_options += CATEGORIES[selected_main_cat]
-        selected_sub_cat = st.selectbox("📂 בחר תת-קטגוריה", sub_options)
+    selected_main_cat = c1.selectbox("קטגוריה", ["הכל"] + list(CATEGORIES.keys()))
+    sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
+    selected_sub_cat = c2.selectbox("תת-קטגוריה", sub_options)
         
-    all_items = [i for i in st.session_state['items'] if i.get('type', 'giveaway') == 'giveaway']
-    
-    if selected_main_cat != "הכל":
-        all_items = [i for i in all_items if i.get('category') == selected_main_cat]
-    if selected_sub_cat != "הכל":
-        all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
+    all_items = [i for i in st.session_state['items'] if i.get('type') == 'giveaway']
+    if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category') == selected_main_cat]
+    if selected_sub_cat != "הכל": all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
         
-    if not all_items:
-        st.info("אין פריטים תחת הסינון הזה.")
-    else:
-        cols = st.columns(3)
-        for index, item in enumerate(reversed(all_items)):
-            with cols[index % 3]:
-                render_card(item, "board")
+    if not all_items: st.info("אין פריטים בסינון זה.")
+    cols = st.columns(3)
+    for index, item in enumerate(reversed(all_items)):
+        with cols[index % 3]: render_card(item, "home")
 
-elif choice == "🗺️ מפה ארצית אינטראקטיבית":
-    st.subheader("🗺️ מפה ארצית אינטראקטיבית וגבולות אזוריים")
-    
-    selected_map_city = st.selectbox("🎯 בחר אזור / עיר להתמקדות במפה:", ["כל הארץ"] + list(CITY_COORDS.keys()))
-    
-    st.markdown("🔵 **כחול:** פריטים למסירה | 🔴 **אדום:** פריטים דרושים | *לחץ על כל נקודה במפה לפתיחת מלוא פרטי החפץ וקישור לוואטסאפ*")
-    
-    if selected_map_city == "כל הארץ":
-        map_center = [31.8944, 34.8094]
-        zoom_level = 8
-        displayed_items = st.session_state['items']
-    else:
-        map_center = [CITY_COORDS[selected_map_city]["lat"], CITY_COORDS[selected_map_city]["lon"]]
-        zoom_level = 13
-        displayed_items = [i for i in st.session_state['items'] if i.get('location') == selected_map_city]
-    
-    m = folium.Map(location=map_center, zoom_start=zoom_level, tiles="OpenStreetMap")
+elif choice == "📍 מפה":
+    st.subheader("מפה ארצית")
+    selected_map_city = st.selectbox("🎯 התמקד בעיר:", ["כל הארץ"] + list(CITY_COORDS.keys()))
+    map_center = [31.8944, 34.8094] if selected_map_city == "כל הארץ" else [CITY_COORDS[selected_map_city]["lat"], CITY_COORDS[selected_map_city]["lon"]]
+    m = folium.Map(location=map_center, zoom_start=8 if selected_map_city == "כל הארץ" else 13, tiles="OpenStreetMap")
     
     if selected_map_city != "כל הארץ" and selected_map_city in CITY_POLYGONS:
-        folium.Polygon(
-            locations=CITY_POLYGONS[selected_map_city],
-            color="#2563eb",
-            weight=3,
-            fill=True,
-            fill_color="#3b82f6",
-            fill_opacity=0.15,
-            popup=f"גבול מוניציפלי: {selected_map_city}"
-        ).add_to(m)
+        folium.Polygon(locations=CITY_POLYGONS[selected_map_city], color="#3b82f6", weight=2, fill=True, fill_opacity=0.1).add_to(m)
 
-    for idx, item in enumerate(displayed_items):
-        base_lat = item.get('lat', map_center[0])
-        base_lon = item.get('lon', map_center[1])
+    for idx, item in enumerate(st.session_state['items']):
+        if selected_map_city != "כל הארץ" and item.get('location') != selected_map_city: continue
+        lat = item.get('lat', map_center[0]) + (idx * 0.001 % 0.01)
+        lon = item.get('lon', map_center[1]) + (idx * 0.001 % 0.01)
+        folium.Marker(location=[lat, lon], tooltip=item.get('title')).add_to(m)
         
-        lat = base_lat + (idx * 0.0012 % 0.02) - 0.01
-        lon = base_lon + (idx * 0.0015 % 0.02) - 0.01
-        
-        title = item.get('title', 'ללא כותרת')
-        loc = item.get('location', 'ישראל')
-        cat = item.get('sub_category', item.get('category', ''))
-        phone = item.get('phone', '0501234567')
-        wa_num = phone[1:] if phone.startswith('0') else phone
-        owner = item.get('owner', {"name": "משתמש", "karma": 10})
-        desc = item.get('description', '')
-        condition = item.get('condition', 'כמו חדש')
-        
-        # חלון קופץ עשיר ומפורט הכולל את כל הפרטים וקישור ישיר לוואטסאפ!
-        popup_html = f"""
-        <div style="direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; width: 250px; color: #1e293b;">
-            <h4 style="margin: 0 0 5px 0; color: #0f172a; font-size: 1.1rem;">{title}</h4>
-            <div style="font-size: 0.8rem; color: #475569; margin-bottom: 6px;">
-                👤 {owner.get('name')} (⭐ {owner.get('karma')})
-            </div>
-            <div style="margin-bottom: 6px;">
-                <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">{cat}</span>
-                <span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">📍 {loc}</span>
-            </div>
-            <p style="font-size: 0.85rem; color: #334155; margin: 6px 0; max-height: 70px; overflow-y: auto;">{desc}</p>
-            <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 8px;">מצב: <b>{condition}</b></div>
-            <a href="https://wa.me/972{wa_num}" target="_blank" style="display: block; text-align: center; background-color: #25D366; color: white !important; padding: 7px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem;">
-                💬 פנה בוואטסאפ ({phone})
-            </a>
-        </div>
-        """
-        
-        marker_color = "red" if item.get('type') == 'request' else "blue"
-        
-        folium.Marker(
-            location=[lat, lon],
-            popup=folium.Popup(popup_html, max_width=280),
-            tooltip=title,
-            icon=folium.Icon(color=marker_color, icon="info-sign")
-        ).add_to(m)
-        
-    st_folium(m, width=1200, height=550)
-    
-    st.divider()
-    st.subheader(f"📌 פריטים באזור: {selected_map_city}")
-    
-    if not displayed_items:
-        st.info("אין פריטים באזור זה כרגע.")
-    else:
-        cols = st.columns(3)
-        for index, item in enumerate(reversed(displayed_items)):
-            with cols[index % 3]:
-                render_card(item, "map_city")
+    st_folium(m, width=1200, height=500)
 
-elif choice == "🤖 סוכן חכם למציאת חפצים":
-    st.subheader("🤖 הסוכן החכם – מציאת פריטים לפי מרחק ומיקום")
-    st.write("הגדר את המיקום שלך ואיזה פריט אתה מחפש. הסוכן יסרוק את כל המאגר ויציג לך את התוצאות מהקרוב ביותר לרחוק ביותר עם חישוב מרחק מדויק בקילומטרים!")
+elif choice == "🔍 סוכן חיפוש":
+    st.markdown("### 🔍 איזה פריט אתה מחפש?")
+    st.write("הסוכן ימצא את הפריטים הקרובים אליך ביותר, ויחשב את המרחק המדויק בקילומטרים.")
     
-    col_agent1, col_agent2 = st.columns(2)
-    with col_agent1:
-        user_city = st.selectbox("📍 בחר את אזור המגורים שלך:", list(CITY_COORDS.keys()), index=0)
-    with col_agent2:
-        search_query = st.text_input("🔍 מה הפריט שאתה מחפש?", placeholder="למשל: ספה, מכונת כביסה, ESP32...")
+    c1, c2 = st.columns(2)
+    user_city = c1.selectbox("📍 המיקום שלך:", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index("רחובות"))
+    search_query = c2.text_input("🔍 מה לחפש?", placeholder="למשל: בקר ESP32, ספה...")
         
     if search_query:
         user_coords = CITY_COORDS[user_city]
-        
         scored_items = []
         for item in st.session_state['items']:
-            title = item.get('title', '')
-            desc = item.get('description', '')
-            sub_cat = item.get('sub_category', '')
-            cat = item.get('category', '')
-            
-            if search_query.lower() in title.lower() or search_query.lower() in desc.lower() or search_query.lower() in sub_cat.lower() or search_query.lower() in cat.lower():
-                item_lat = item.get('lat', user_coords['lat'])
-                item_lon = item.get('lon', user_coords['lon'])
-                dist = calculate_distance(user_coords['lat'], user_coords['lon'], item_lat, item_lon)
+            text_block = (item.get('title','') + item.get('description','') + item.get('category','')).lower()
+            if search_query.lower() in text_block:
+                dist = calculate_distance(user_coords['lat'], user_coords['lon'], item.get('lat', 0), item.get('lon', 0))
                 scored_items.append((dist, item))
                 
-        scored_items.sort(key=lambda x: x[0])
-        
-        st.divider()
-        st.markdown(f"### תוצאות החיפוש עבור '{search_query}' מתוך {user_city}")
+        scored_items.sort(key=lambda x: x[0]) # מיון לפי המרחק הקרוב ביותר
         
         if not scored_items:
-            st.warning("לא נמצאו פריטים התואמים לחיפוש שלך במאגר. נסה לחפש מילת מפתח אחרת או טען נתונים במעבדה.")
+            st.warning("לא מצאנו פריטים תואמים.")
         else:
-            st.success(f"מצאנו {len(scored_items)} פריטים! מסודרים מהקרוב ביותר לרחוק ביותר ממך:")
+            st.success(f"מצאנו {len(scored_items)} פריטים, מסודרים מהקרוב לרחוק:")
             cols = st.columns(3)
             for index, (dist, item) in enumerate(scored_items):
                 with cols[index % 3]:
-                    render_card(item, "smart_agent", extra_info=f"{dist} ק\"מ ממך ({item.get('location')})")
+                    render_card(item, "agent", extra_info=f"{dist} ק\"מ ממך")
 
-elif choice == "🙏 פריטים דרושים":
-    st.subheader("🙏 פריטים דרושים ובקשות מהקהילה")
-    requests_items = [i for i in st.session_state['items'] if i.get('type') == 'request']
-    if not requests_items:
-        st.info("אין בקשות פעילות כרגע.")
-    else:
-        cols = st.columns(3)
-        for index, item in enumerate(reversed(requests_items)):
-            with cols[index % 3]:
-                render_card(item, "requests")
+elif choice == "➕ סוכן העלאה":
+    st.markdown("### ➕ איזה פריט אתה כבר לא צריך ותרצה להעלות?")
+    st.write("הסוכן יעזור לך להעלות את הפריט בצורה תקנית ומהירה.")
+    
+    with st.form("smart_upload_form", clear_on_submit=True):
+        title = st.text_input("מה שם הפריט?")
+        c1, c2 = st.columns(2)
+        main_cat = c1.selectbox("לאיזו קטגוריה הוא שייך?", list(CATEGORIES.keys()))
+        sub_cat = c2.selectbox("תת-קטגוריה:", CATEGORIES[main_cat])
+        
+        c3, c4 = st.columns(2)
+        city = c3.selectbox("מהי עיר האיסוף?", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index("רחובות"))
+        phone = c4.text_input("מספר טלפון לתיאום:", value="")
+        
+        desc = st.text_area("ספר קצת על מצב הפריט:")
+        uploaded_img = st.file_uploader("תמונה (לא חובה)", type=["png", "jpg", "jpeg"])
+        
+        if st.form_submit_button("פרסם פריט", type="primary", use_container_width=True):
+            is_valid, error_msg = validate_content(title, desc, main_cat)
+            
+            if not is_valid:
+                st.error(f"המודעה נחסמה על ידי הסוכן: {error_msg}")
+            else:
+                img_str = base64.b64encode(uploaded_img.read()).decode() if uploaded_img else ""
+                coords = CITY_COORDS.get(city)
+                new_item = {
+                    "id": f"usr_{random.randint(1000, 9999)}",
+                    "type": "giveaway",
+                    "title": title,
+                    "category": main_cat,
+                    "sub_category": sub_cat,
+                    "location": city,
+                    "lat": coords["lat"] + random.uniform(-0.01, 0.01),
+                    "lon": coords["lon"] + random.uniform(-0.01, 0.01),
+                    "description": desc,
+                    "phone": phone,
+                    "image": img_str,
+                    "views": 0,
+                    # פרופיל משתמש אמיתי, התחלה מ-0 כוכבים ולא 50 של בוט
+                    "owner": {"name": "גיא", "karma": 0, "verified": False} 
+                }
+                st.session_state['items'].insert(0, new_item) # מוסיף לתחילת הרשימה
+                save_items(st.session_state['items'])
+                st.balloons()
+                st.success("הפריט הועלה בהצלחה למערכת!")
 
-elif choice == "❤️ פריטים שמעניינים אותי":
-    st.subheader("❤️ פריטים שמעניינים אותי")
+elif choice == "❤️ שמורים":
+    st.subheader("פריטים ששמרתי")
     if not st.session_state['favorites']:
         st.info("עדיין לא שמרת פריטים.")
     else:
@@ -373,63 +258,6 @@ elif choice == "❤️ פריטים שמעניינים אותי":
         for index, item in enumerate(st.session_state['favorites']):
             with cols[index % 3]:
                 render_card(item, "favs")
-                item_id = item.get('id', random.randint(1000,9999))
-                if st.button("❌ הסר", key=f"rem_{item_id}"):
+                if st.button("❌ הסר", key=f"rem_{item.get('id')}", use_container_width=True):
                     st.session_state['favorites'].remove(item)
-                    save_items(st.session_state['items'])
                     st.rerun()
-
-elif choice == "➕ פרסם מודעה":
-    st.subheader("➕ פרסם פריט חדש למערכת")
-    with st.form("new_ad_form", clear_on_submit=True):
-        ad_type = st.radio("סוג מודעה", ["מסירה (Giveaway)", "בקשה (Request)"])
-        title = st.text_input("כותרת הפריט")
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            main_cat = st.selectbox("קטגוריה ראשית", list(CATEGORIES.keys()))
-        with c2:
-            sub_cat = st.selectbox("תת-קטגוריה", CATEGORIES[main_cat])
-            
-        city = st.selectbox("עיר איסוף", list(CITY_COORDS.keys()))
-        phone = st.text_input("מספר טלפון לוואטסאפ", value="0500000000")
-        desc = st.text_area("תיאור מצב החפץ")
-        uploaded_img = st.file_uploader("העלה תמונה אמיתית (אופציונלי)", type=["png", "jpg", "jpeg"])
-        
-        if st.form_submit_button("פרסם עכשיו", type="primary") and title:
-            img_str = base64.b64encode(uploaded_img.read()).decode() if uploaded_img else ""
-            coords = CITY_COORDS.get(city, {"lat": 32.0853, "lon": 34.7818})
-            
-            new_item = {
-                "id": f"user_{random.randint(100000, 999999)}",
-                "type": "request" if "בקשה" in ad_type else "giveaway",
-                "title": title,
-                "category": main_cat,
-                "sub_category": sub_cat,
-                "location": city,
-                "lat": coords["lat"] + random.uniform(-0.01, 0.01),
-                "lon": coords["lon"] + random.uniform(-0.01, 0.01),
-                "description": desc,
-                "phone": phone,
-                "image": img_str,
-                "image_url": CATEGORY_IMAGES.get(main_cat, ""),
-                "status": "available",
-                "views": 1,
-                "owner": {"name": "אני", "karma": 50, "verified": True}
-            }
-            st.session_state['items'].append(new_item)
-            save_items(st.session_state['items'])
-            st.success("המודעה פורסמה בהצלחה!")
-
-elif choice == "🤖 מעבדה":
-    st.subheader("🤖 מעבדת בוטים ונתונים")
-    st.write("כאן תוכל לאפס את הנתונים ולייצר מחדש מאגר עשיר הכולל בדיוק פריטים מלאים לכל תת-קטגוריה במערכת.")
-    if st.button("🚀 טען מחדש את כל הקטגוריות ותתי-הקטגוריות", type="primary"):
-        st.session_state['items'] = generate_all_category_items()
-        save_items(st.session_state['items'])
-        st.success("המאגר אופס ונוצר מחדש בהצלחה עם כיסוי מלא של 100% מכל הקטגוריות!")
-    if st.button("🗑️ איפוס מלא של הלוח"):
-        st.session_state['items'] = []
-        st.session_state['favorites'] = []
-        save_items([])
-        st.warning("הלוח אופס לגמרי.")
