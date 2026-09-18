@@ -100,7 +100,7 @@ st.markdown("""
     .wa-btn { flex: 1; text-align: center; background: #25D366; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem;}
     .call-btn { flex: 1; text-align: center; background: #3b82f6; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem;}
     .inapp-btn { flex: 1; text-align: center; background: #6366f1; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem;}
-    .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
+    .nav-bar { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #e2e8f0;}
     .metric-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); text-align: center; border: 1px solid #e2e8f0; }
     </style>
 """, unsafe_allow_html=True)
@@ -109,7 +109,8 @@ st.title("♻️ אגורה Pro")
 
 st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
 menu_options = ["🏠 דף הבית", "📍 מפה", "🔍 סוכן חיפוש", "➕ סוכן העלאה", "❤️ שמורים", "📊 ניהול ועסקים"]
-choice = st.radio("ניווט", menu_options, horizontal=True, label_visibility="collapsed")
+# שימוש בתפריט בחירה רגיל כדי שלא יישבר לנקודות במסכים קטנים
+choice = st.selectbox("📌 בחר עמוד לניווט:", menu_options, label_visibility="collapsed")
 st.markdown('</div>', unsafe_allow_html=True)
 
 def render_card(item, unique_key_prefix, extra_info=""):
@@ -118,21 +119,22 @@ def render_card(item, unique_key_prefix, extra_info=""):
     wa_num = phone[1:] if phone.startswith('0') else phone
     contact_pref = item.get('contact_pref', 'שיחה רגילה או וואטסאפ')
     
-    img_src = item.get('image_url') or "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
-    if item.get('image'):
-        try: img_src = f"data:image/png;base64,{item.get('image')}"
-        except: pass
+    # מנגנון חסין לתמונות שבורות
+    default_img = "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
+    img_src = item.get('image_url', '')
+    if item.get('image') and len(item.get('image')) > 50:
+        img_src = f"data:image/png;base64,{item.get('image')}"
+    
+    if not img_src or len(img_src) < 10:
+        img_src = default_img
 
-    buttons_html = ""
+    # יצירת הכפתורים בשורה אחת ללא רווחים מקדימים כדי למנוע הופעת קוד כ-Code Block
     if contact_pref == "הודעות באפליקציה בלבד":
-        buttons_html = f'<a href="#" class="inapp-btn">✉️ שלח הודעה באפליקציה</a>'
+        buttons_html = '<a href="#" class="inapp-btn">✉️ שלח הודעה באפליקציה</a>'
     elif contact_pref == "רק וואטסאפ":
         buttons_html = f'<a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ בלבד</a>'
     else:
-        buttons_html = f"""
-        <a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ</a>
-        <a href="tel:{phone}" class="call-btn">📞 התקשר</a>
-        """
+        buttons_html = f'<a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ</a><a href="tel:{phone}" class="call-btn">📞 התקשר</a>'
 
     card_html = f"""<div class="product-card">
 <img src="{img_src}" style="width:100%; height:180px; object-fit:cover; border-radius:15px; margin-bottom:15px;"/>
