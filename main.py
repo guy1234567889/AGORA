@@ -21,6 +21,16 @@ CATEGORIES = {
     "שונות": ["כלי עבודה", "ציוד ספורט", "ספרים ומגזינים", "אחר"]
 }
 
+# מילון מילות מפתח לסיווג אוטומטי
+AUTO_CAT_MAP = {
+    "אופניים": ("שונות", "ציוד ספורט"),
+    "מחשב": ("אלקטרוניקה ומעבדה", "טלפונים ומחשבים"),
+    "מקרר": ("מוצרי חשמל", "מקררים ומקפיאים"),
+    "ספה": ("רהיטים", "ספות וסלון"),
+    "חולצה": ("ביגוד ואופנה", "ביגוד גברים"),
+    "esp32": ("אלקטרוניקה ומעבדה", "בקרים ומיקרו-בקרים")
+}
+
 CITY_COORDS = {
     "רחובות": {"lat": 31.8944, "lon": 34.8094},
     "תל אביב": {"lat": 32.0853, "lon": 34.7818},
@@ -46,7 +56,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return round(R * c, 1)
 
 def validate_content(title, desc, main_cat):
-    # מנגנון סינון חכם למניעת העלאת ספאם, קללות, או פריטים לא קשורים
     blocked_words = ["שטויות", "קללה", "דלורית", "זבל", "test", "בדיקה"]
     text_to_check = (title + " " + desc).lower()
     
@@ -76,6 +85,15 @@ if 'items' not in st.session_state:
     st.session_state['items'] = load_items()
 if 'favorites' not in st.session_state:
     st.session_state['favorites'] = []
+    
+# יצירת פרופיל משתמש קיים המדמה משתמש רשום באפליקציה
+if 'current_user' not in st.session_state:
+    st.session_state['current_user'] = {
+        "name": "גיא", 
+        "phone": "0526693881", 
+        "city": "רחובות",
+        "karma": 5
+    }
 
 st.markdown("""
     <style>
@@ -93,30 +111,42 @@ st.markdown("""
     .wa-btn:hover { background: #16a34a; }
     .call-btn { flex: 1; text-align: center; background: #3b82f6; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
     .call-btn:hover { background: #2563eb; }
+    .inapp-btn { flex: 1; text-align: center; background: #6366f1; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
+    .inapp-btn:hover { background: #4f46e5; }
     .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
     </style>
 """, unsafe_allow_html=True)
 
 st.title("♻️ אגורה Pro")
 
-# תפריט ניווט פרימיום (מדמה תפריט אפליקציה)
 st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
 menu_options = ["🏠 דף הבית", "📍 מפה", "🔍 סוכן חיפוש", "➕ סוכן העלאה", "❤️ שמורים"]
 choice = st.radio("ניווט", menu_options, horizontal=True, label_visibility="collapsed")
 st.markdown('</div>', unsafe_allow_html=True)
 
 def render_card(item, unique_key_prefix, extra_info=""):
-    owner = item.get('owner', {"name": "משתמש אנונימי", "karma": 0, "verified": False})
-    views = item.get('views', 1)
+    owner = item.get('owner', {"name": "משתמש אנונימי", "karma": 0})
     phone = item.get('phone', '')
     wa_num = phone[1:] if phone.startswith('0') else phone
+    contact_pref = item.get('contact_pref', 'שיחה רגילה או וואטסאפ')
     
     img_src = item.get('image_url') or "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
     if item.get('image'):
         try: img_src = f"data:image/png;base64,{item.get('image')}"
         except: pass
 
-    # עיצוב מחדש של הכרטיסיה - מראה נקי, שני כפתורי צור קשר, הצגת דירוג ריאלית
+    # יצירת כפתורי יצירת הקשר בהתאם לבחירת המפרסם
+    buttons_html = ""
+    if contact_pref == "הודעות באפליקציה בלבד":
+        buttons_html = f'<a href="#" class="inapp-btn">✉️ שלח הודעה באפליקציה</a>'
+    elif contact_pref == "רק וואטסאפ":
+        buttons_html = f'<a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ בלבד</a>'
+    else:
+        buttons_html = f"""
+        <a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ</a>
+        <a href="tel:{phone}" class="call-btn">📞 התקשר</a>
+        """
+
     card_html = f"""<div class="product-card">
 <img src="{img_src}" style="width:100%; height:180px; object-fit:cover; border-radius:15px; margin-bottom:15px;"/>
 <div class="user-info">
@@ -130,8 +160,7 @@ def render_card(item, unique_key_prefix, extra_info=""):
 </div>
 <p style="color: #475569; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5;">{item.get('description')}</p>
 <div class="action-buttons">
-<a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ</a>
-<a href="tel:{phone}" class="call-btn">📞 התקשר</a>
+{buttons_html}
 </div>
 </div>"""
     st.markdown(card_html, unsafe_allow_html=True)
@@ -180,8 +209,8 @@ elif choice == "🔍 סוכן חיפוש":
     st.write("הסוכן ימצא את הפריטים הקרובים אליך ביותר, ויחשב את המרחק המדויק בקילומטרים.")
     
     c1, c2 = st.columns(2)
-    user_city = c1.selectbox("📍 המיקום שלך:", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index("רחובות"))
-    search_query = c2.text_input("🔍 מה לחפש?", placeholder="למשל: בקר ESP32, ספה...")
+    user_city = c1.selectbox("📍 המיקום שלך:", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index(st.session_state['current_user']['city']))
+    search_query = c2.text_input("🔍 מה לחפש?", placeholder="למשל: בקר ESP32, ספה, אופניים...")
         
     if search_query:
         user_coords = CITY_COORDS[user_city]
@@ -192,7 +221,7 @@ elif choice == "🔍 סוכן חיפוש":
                 dist = calculate_distance(user_coords['lat'], user_coords['lon'], item.get('lat', 0), item.get('lon', 0))
                 scored_items.append((dist, item))
                 
-        scored_items.sort(key=lambda x: x[0]) # מיון לפי המרחק הקרוב ביותר
+        scored_items.sort(key=lambda x: x[0])
         
         if not scored_items:
             st.warning("לא מצאנו פריטים תואמים.")
@@ -205,17 +234,29 @@ elif choice == "🔍 סוכן חיפוש":
 
 elif choice == "➕ סוכן העלאה":
     st.markdown("### ➕ איזה פריט אתה כבר לא צריך ותרצה להעלות?")
-    st.write("הסוכן יעזור לך להעלות את הפריט בצורה תקנית ומהירה.")
     
-    with st.form("smart_upload_form", clear_on_submit=True):
-        title = st.text_input("מה שם הפריט?")
+    title = st.text_input("מה שם הפריט?", placeholder="לדוגמה: אופניים חשמליים", key="upload_title")
+    
+    # מנגנון סיווג אוטומטי חכם המבוסס על השם שהוזן
+    suggested_main = "שונות"
+    suggested_sub = "אחר"
+    for keyword, (m_cat, s_cat) in AUTO_CAT_MAP.items():
+        if keyword in title.lower():
+            suggested_main = m_cat
+            suggested_sub = s_cat
+            break
+            
+    with st.form("smart_upload_form", clear_on_submit=False):
         c1, c2 = st.columns(2)
-        main_cat = c1.selectbox("לאיזו קטגוריה הוא שייך?", list(CATEGORIES.keys()))
-        sub_cat = c2.selectbox("תת-קטגוריה:", CATEGORIES[main_cat])
+        main_cat = c1.selectbox("לאיזו קטגוריה הוא שייך?", list(CATEGORIES.keys()), index=list(CATEGORIES.keys()).index(suggested_main))
+        sub_cat = c2.selectbox("תת-קטגוריה:", CATEGORIES[main_cat], index=CATEGORIES[main_cat].index(suggested_sub) if suggested_sub in CATEGORIES[main_cat] else 0)
         
+        # משיכת פרטי פרופיל המשתמש לטופס כדי לחסוך הקלדה
         c3, c4 = st.columns(2)
-        city = c3.selectbox("מהי עיר האיסוף?", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index("רחובות"))
-        phone = c4.text_input("מספר טלפון לתיאום:", value="")
+        city = c3.selectbox("מהי עיר האיסוף?", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index(st.session_state['current_user']['city']))
+        phone = c4.text_input("מספר טלפון לתיאום:", value=st.session_state['current_user']['phone'])
+        
+        contact_pref = st.radio("איך תעדיף שיפנו אליך בנוגע לפריט הזה?", ["שיחה רגילה או וואטסאפ", "רק וואטסאפ", "הודעות באפליקציה בלבד"], horizontal=True)
         
         desc = st.text_area("ספר קצת על מצב הפריט:")
         uploaded_img = st.file_uploader("תמונה (לא חובה)", type=["png", "jpg", "jpeg"])
@@ -239,12 +280,12 @@ elif choice == "➕ סוכן העלאה":
                     "lon": coords["lon"] + random.uniform(-0.01, 0.01),
                     "description": desc,
                     "phone": phone,
+                    "contact_pref": contact_pref,
                     "image": img_str,
                     "views": 0,
-                    # פרופיל משתמש אמיתי, התחלה מ-0 כוכבים ולא 50 של בוט
-                    "owner": {"name": "גיא", "karma": 0, "verified": False} 
+                    "owner": {"name": st.session_state['current_user']['name'], "karma": st.session_state['current_user']['karma'], "verified": False} 
                 }
-                st.session_state['items'].insert(0, new_item) # מוסיף לתחילת הרשימה
+                st.session_state['items'].insert(0, new_item)
                 save_items(st.session_state['items'])
                 st.balloons()
                 st.success("הפריט הועלה בהצלחה למערכת!")
