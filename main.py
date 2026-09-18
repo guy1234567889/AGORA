@@ -258,7 +258,7 @@ if choice == "🏠 דף הבית":
     if selected_loc != "כל הארץ": 
         all_items = [i for i in all_items if i.get('location') == selected_loc]
     if search_text: 
-        all_items = [i for i in all_items if search_text.lower() in (i.get('title','') + i.get('description','')).lower()]
+        all_items = [i for i in all_items if search_text.lower() in (i.get('title','') + " " + i.get('description','') + " " + i.get('sub_category','')).lower()]
         
     if not all_items: 
         st.info("אין פריטים התואמים לחיפוש שלך.")
@@ -316,7 +316,8 @@ elif choice == "🔍 סוכן חיפוש":
         user_coords = CITY_COORDS[user_city]
         scored_items = []
         for item in st.session_state['items']:
-            text_block = (item.get('title','') + item.get('description','') + item.get('category','')).lower()
+            # חיפוש מדויק בכותרת, תיאור ותת-קטגוריה בלבד (ללא קטגוריה ראשית)
+            text_block = (item.get('title','') + " " + item.get('description','') + " " + item.get('sub_category','')).lower()
             if search_query.lower() in text_block:
                 dist = calculate_distance(user_coords['lat'], user_coords['lon'], item.get('lat', 0), item.get('lon', 0))
                 scored_items.append((dist, item))
