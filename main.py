@@ -130,12 +130,6 @@ def validate_content(title, desc, main_cat):
     return True, ""
 
 def load_items():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            items = json.load(f)
-            if items: return items
-            
-    # יצירת פריטי דמה אוטומטיים לכל תת-קטגוריה כדי שלא יהיה ריק אף פעם
     dummy_items = []
     cities = list(CITY_COORDS.keys())
     for main_cat, sub_cats in CATEGORIES.items():
@@ -159,10 +153,6 @@ def load_items():
                 "owner": {"name": "צוות אגורה", "karma": 15, "verified": True}
             })
     return dummy_items
-
-def save_items(items):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=4)
 
 if 'items' not in st.session_state: st.session_state['items'] = load_items()
 if 'favorites' not in st.session_state: st.session_state['favorites'] = []
@@ -246,21 +236,27 @@ def render_card(item, unique_key_prefix, extra_info=""):
 if choice == "🏠 דף הבית":
     st.markdown('<div class="filter-bar-title">מה תרצו לחפש היום?</div>', unsafe_allow_html=True)
     
-    f1, f2, f3, f4 = st.columns(4)
-    selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()))
-    
-    sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
-    selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options)
-    
-    selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
-    search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: מחשב, ממיר, קוטל יתושים...")
+    with st.form("filter_form"):
+        f1, f2, f3, f4 = st.columns(4)
+        selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()))
+        
+        sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
+        selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options)
+        
+        selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
+        search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: מחשב, ממיר...")
+        
+        submitted = st.form_submit_button("🔍 חפש", type="primary", use_container_width=True)
     
     st.divider()
 
     all_items = [i for i in st.session_state['items'] if i.get('type') == 'giveaway']
-    if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category') == selected_main_cat]
-    if selected_sub_cat != "הכל": all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
-    if selected_loc != "כל הארץ": all_items = [i for i in all_items if i.get('location') == selected_loc]
+    if selected_main_cat != "הכל": 
+        all_items = [i for i in all_items if i.get('category') == selected_main_cat]
+    if selected_sub_cat != "הכל": 
+        all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
+    if selected_loc != "כל הארץ": 
+        all_items = [i for i in all_items if i.get('location') == selected_loc]
     if search_text: 
         all_items = [i for i in all_items if search_text.lower() in (i.get('title','') + i.get('description','')).lower()]
         
