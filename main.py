@@ -86,7 +86,6 @@ if 'current_user' not in st.session_state:
 st.markdown("""
     <style>
     .stApp { background: #f8fafc; color: #0f172a; direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; }
-    /* תיקון צבעי שדות הקלט והטקסט שיהיו ברורים לקריאה ולא שחורים */
     input, textarea, div[data-baseweb="select"] { background-color: #ffffff !important; color: #0f172a !important; }
     .stTextInput input, .stTextArea textarea { color: #0f172a !important; background-color: #ffffff !important; }
     
@@ -167,8 +166,10 @@ if choice == "🏠 דף הבית":
     selected_sub_cat = c2.selectbox("תת-קטגוריה", sub_options)
         
     all_items = [i for i in st.session_state['items'] if i.get('type') == 'giveaway']
-    if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category'] == selected_main_cat]
-    if selected_sub_cat != "הכל": all_items = [i for i in all_items if i.get('sub_category'] == selected_sub_cat]
+    if selected_main_cat != "הכל": 
+        all_items = [i for i in all_items if i.get('category') == selected_main_cat]
+    if selected_sub_cat != "הכל": 
+        all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
         
     if not all_items: st.info("אין פריטים בסינון זה.")
     cols = st.columns(3)
