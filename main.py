@@ -236,24 +236,17 @@ def render_card(item, unique_key_prefix, extra_info=""):
 if choice == "🏠 דף הבית":
     st.markdown('<div class="filter-bar-title">מה תרצו לחפש היום?</div>', unsafe_allow_html=True)
     
-    # ניהול מצב הקטגוריות מחוץ לטופס כדי לאפשר עדכון דינמי חלק
-    if 'selected_main_cat' not in st.session_state:
-        st.session_state['selected_main_cat'] = "הכל"
-
-    f1, f2, f3, f4 = st.columns(4)
-    
-    def update_main_cat():
-        st.session_state['selected_sub_cat'] = "הכל"
-
-    selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()), key="selected_main_cat", on_change=update_main_cat)
-    
-    sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
-    if 'selected_sub_cat' not in st.session_state:
-        st.session_state['selected_sub_cat'] = "הכל"
+    with st.form("filter_form"):
+        f1, f2, f3, f4 = st.columns(4)
+        selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()))
         
-    selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options, key="selected_sub_cat")
-    selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
-    search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: מחשב, ממיר...")
+        sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
+        selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options)
+        
+        selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
+        search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: מחשב, ממיר...")
+        
+        submitted = st.form_submit_button("🔍 חפש", type="primary", use_container_width=True)
     
     st.divider()
 
