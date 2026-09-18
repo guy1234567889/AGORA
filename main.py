@@ -98,6 +98,10 @@ if 'current_user' not in st.session_state:
 st.markdown("""
     <style>
     .stApp { background: #f8fafc; color: #0f172a; direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    
+    /* פתרון באג הטקסט הנעלם: כפיית צבע כהה לטקסט תפריט הניווט ולשורות טקסט גם במצב לילה */
+    div[role="radiogroup"] label, div[role="radiogroup"] div, p { color: #0f172a !important; }
+    
     .product-card {
         background: #ffffff; border-radius: 20px; padding: 20px; margin-bottom: 20px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
@@ -135,17 +139,13 @@ def render_card(item, unique_key_prefix, extra_info=""):
         try: img_src = f"data:image/png;base64,{item.get('image')}"
         except: pass
 
-    # יצירת כפתורי יצירת הקשר בהתאם לבחירת המפרסם
-    buttons_html = ""
+    # תיקון הקוד השבור: שורה רציפה אחת ללא שבירות כדי ש-Streamlit לא ישבש את ה-HTML
     if contact_pref == "הודעות באפליקציה בלבד":
         buttons_html = f'<a href="#" class="inapp-btn">✉️ שלח הודעה באפליקציה</a>'
     elif contact_pref == "רק וואטסאפ":
         buttons_html = f'<a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ בלבד</a>'
     else:
-        buttons_html = f"""
-        <a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ</a>
-        <a href="tel:{phone}" class="call-btn">📞 התקשר</a>
-        """
+        buttons_html = f'<a href="https://wa.me/972{wa_num}" target="_blank" class="wa-btn">💬 וואטסאפ</a> <a href="tel:{phone}" class="call-btn">📞 התקשר</a>'
 
     card_html = f"""<div class="product-card">
 <img src="{img_src}" style="width:100%; height:180px; object-fit:cover; border-radius:15px; margin-bottom:15px;"/>
@@ -159,9 +159,7 @@ def render_card(item, unique_key_prefix, extra_info=""):
 {f'<span class="badge" style="background:#fef08a; color:#854d0e;">🚗 {extra_info}</span>' if extra_info else ''}
 </div>
 <p style="color: #475569; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5;">{item.get('description')}</p>
-<div class="action-buttons">
-{buttons_html}
-</div>
+<div class="action-buttons">{buttons_html}</div>
 </div>"""
     st.markdown(card_html, unsafe_allow_html=True)
     
@@ -237,7 +235,6 @@ elif choice == "➕ סוכן העלאה":
     
     title = st.text_input("מה שם הפריט?", placeholder="לדוגמה: אופניים חשמליים", key="upload_title")
     
-    # מנגנון סיווג אוטומטי חכם המבוסס על השם שהוזן
     suggested_main = "שונות"
     suggested_sub = "אחר"
     for keyword, (m_cat, s_cat) in AUTO_CAT_MAP.items():
@@ -251,7 +248,6 @@ elif choice == "➕ סוכן העלאה":
         main_cat = c1.selectbox("לאיזו קטגוריה הוא שייך?", list(CATEGORIES.keys()), index=list(CATEGORIES.keys()).index(suggested_main))
         sub_cat = c2.selectbox("תת-קטגוריה:", CATEGORIES[main_cat], index=CATEGORIES[main_cat].index(suggested_sub) if suggested_sub in CATEGORIES[main_cat] else 0)
         
-        # משיכת פרטי פרופיל המשתמש לטופס כדי לחסוך הקלדה
         c3, c4 = st.columns(2)
         city = c3.selectbox("מהי עיר האיסוף?", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index(st.session_state['current_user']['city']))
         phone = c4.text_input("מספר טלפון לתיאום:", value=st.session_state['current_user']['phone'])
