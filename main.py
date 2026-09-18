@@ -132,8 +132,33 @@ def validate_content(title, desc, main_cat):
 def load_items():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+            items = json.load(f)
+            if items: return items
+            
+    # יצירת פריטי דמה אוטומטיים לכל תת-קטגוריה כדי שלא יהיה ריק אף פעם
+    dummy_items = []
+    cities = list(CITY_COORDS.keys())
+    for main_cat, sub_cats in CATEGORIES.items():
+        for sub_cat in sub_cats:
+            city = random.choice(cities)
+            coords = CITY_COORDS[city]
+            dummy_items.append({
+                "id": f"dummy_{random.randint(10000, 99999)}",
+                "type": "giveaway",
+                "title": f"מסירה: {sub_cat} במצב מצוין",
+                "category": main_cat,
+                "sub_category": sub_cat,
+                "location": city,
+                "lat": coords["lat"] + random.uniform(-0.01, 0.01),
+                "lon": coords["lon"] + random.uniform(-0.01, 0.01),
+                "description": f"פריט איכותי ששמור היטב מתת-הקטגוריה {sub_cat}. איסוף נוח בתיאום מראש.",
+                "phone": "0526693881",
+                "contact_pref": "שיחה רגילה או וואטסאפ",
+                "image_url": "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80",
+                "views": random.randint(1, 20),
+                "owner": {"name": "צוות אגורה", "karma": 15, "verified": True}
+            })
+    return dummy_items
 
 def save_items(items):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -349,7 +374,7 @@ elif choice == "➕ סוכן העלאה":
 
 elif choice == "❤️ שמורים":
     st.subheader("פריטים ששמרתי")
-    if not st.session_state['favorites']: st.info("עדיין לא שמרת פריטים.")
+    if not st.session_state['favorites']: st.info("אין פריטים ששמרת עדיין.")
     else:
         cols = st.columns(3)
         for index, item in enumerate(st.session_state['favorites']):
