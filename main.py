@@ -12,26 +12,91 @@ st.set_page_config(page_title="אגורה Pro", page_icon="♻️", layout="wide
 
 DATA_FILE = "agora_data.json"
 
+# קטלוג אב מקיף (Master Catalog) בסגנון יד 2
 CATEGORIES = {
-    "🛋️ רהיטים": ["ספות וסלון", "ספה בודדת", "פינות אוכל ושולחנות", "ארונות ומזנונים", "מיטות ומזרנים", "ריהוט גן"],
-    "📱 סלולר ותקשורת": ["מכשירים סלולריים", "כיסויים ומגנים", "מטענים וכבלים", "שעונים חכמים", "אחר"],
-    "🚲 אופניים וקורקינטים": ["אופניים חשמליים", "קורקינטים חשמליים", "אופניים (לא חשמלי)", "קורקינטים (לא חשמלי)", "קסדות ואביזרים"],
-    "📺 חשמל ואלקטרוניקה": ["טלוויזיות", "מקררים ומקפיאים", "מכונות כביסה ומייבשים", "תנורים וכיריים", "מזגנים ומאווררים", "קונסולות ומשחקים"],
-    "👶 מוצרי תינוקות וילדים": ["עגלות וטיולונים", "כיסאות בטיחות", "משחקים וצעצועים", "מיטות ולולים", "בגדי תינוקות"],
-    "🛠️ כלי עבודה ומעבדה": ["ציוד מדידה ו-RF", "בקרים ורכיבים (ESP32)", "כלי עבודה חשמליים", "כלי עבודה ידניים", "אחר"],
-    "👕 ביגוד ואופנה": ["בגדי נשים", "בגדי גברים", "נעליים", "אקססוריז ותיקים"],
-    "📦 שונות": ["ספרים ומגזינים", "ציוד ספורט וכושר", "קמפינג ופנאי", "אחר"]
+    "📱 אלקטרוניקה, מחשבים ותקשורת": [
+        "מכשירים סלולריים וטאבלטים", 
+        "מחשבים ניידים", 
+        "מחשבים נייחים", 
+        "מסכים וטלוויזיות", 
+        "ממירים וסטרימרים", 
+        "קונסולות משחק", 
+        "ציוד היקפי (מקלדות, עכברים)",
+        "כבלים ומטענים"
+    ],
+    "🏠 חשמל ומוצרי בית": [
+        "מקררים ומקפיאים", 
+        "מכונות כביסה ומייבשים", 
+        "מדיחי כלים", 
+        "תנורים וכיריים", 
+        "מזגנים ומאווררים", 
+        "קוטלי יתושים ומזיקים", 
+        "שואבי אבק", 
+        "מוצרי מטבח קטנים (מיקסר, בלנדר)"
+    ],
+    "🛋️ רהיטים וציוד לבית": [
+        "ספות ומערכות סלון", 
+        "ספה בודדת", 
+        "פינות אוכל ושולחנות", 
+        "ארונות ומזנונים", 
+        "מיטות ומזרנים", 
+        "שידות וכונניות", 
+        "ריהוט גן ומרפסת"
+    ],
+    "🚲 תחבורה וניידות": [
+        "אופניים חשמליים", 
+        "אופניים רגילים", 
+        "קורקינטים חשמליים", 
+        "קורקינטים רגילים", 
+        "קסדות ואביזרי בטיחות"
+    ],
+    "🛠️ כלי עבודה, RF ומעבדה": [
+        "ציוד מדידה ו-RF", 
+        "רכיבים אלקטרוניים ובקרים (ESP32)", 
+        "כלי עבודה חשמליים (מקדחות, מברגות)", 
+        "כלי עבודה ידניים", 
+        "ציוד ריתוך וציוד טכני"
+    ],
+    "👶 ילדים, תינוקות וצעצועים": [
+        "עגלות וטיולונים", 
+        "כיסאות בטיחות לרכב", 
+        "משחקי קופסה וצעצועים", 
+        "מיטות ולולים", 
+        "בגדי תינוקות וילדים"
+    ],
+    "👕 אופנה, ביגוד ותכשיטים": [
+        "בגדי נשים", 
+        "בגדי גברים", 
+        "הנעלה", 
+        "תיקים ואקססוריז", 
+        "שעונים ותכשיטים"
+    ],
+    "📦 פנאי, ספורט ושונות": [
+        "ספרים ומגזינים", 
+        "ציוד ספורט וכושר", 
+        "ציוד קמפינג וטיולים", 
+        "כלי נגינה", 
+        "ציוד לחיות מחמד",
+        "אחר"
+    ]
 }
 
+# סוכן חכם מורחב לזיהוי אוטומטי של תת-קטגוריות לפי מילות מפתח
 AUTO_CAT_MAP = {
-    "אופניים": ("🚲 אופניים וקורקינטים", "אופניים (לא חשמלי)"),
-    "קורקינט": ("🚲 אופניים וקורקינטים", "קורקינטים חשמליים"),
-    "מחשב": ("📺 חשמל ואלקטרוניקה", "אחר"),
-    "מקרר": ("📺 חשמל ואלקטרוניקה", "מקררים ומקפיאים"),
-    "ספה": ("🛋️ רהיטים", "ספות וסלון"),
-    "חולצה": ("👕 ביגוד ואופנה", "בגדי גברים"),
-    "esp32": ("🛠️ כלי עבודה ומעבדה", "בקרים ורכיבים (ESP32)"),
-    "rf": ("🛠️ כלי עבודה ומעבדה", "ציוד מדידה ו-RF")
+    "מחשב": ("📱 אלקטרוניקה, מחשבים ותקשורת", "מחשבים ניידים"),
+    "לפטופ": ("📱 אלקטרוניקה, מחשבים ותקשורת", "מחשבים ניידים"),
+    "סלולר": ("📱 אלקטרוניקה, מחשבים ותקשורת", "מכשירים סלולריים וטאבלטים"),
+    "טלפון": ("📱 אלקטרוניקה, מחשבים ותקשורת", "מכשירים סלולריים וטאבלטים"),
+    "ממיר": ("📱 אלקטרוניקה, מחשבים ותקשורת", "ממירים וסטרימרים"),
+    "סטרימר": ("📱 אלקטרוניקה, מחשבים ותקשורת", "ממירים וסטרימרים"),
+    "יתוש": ("🏠 חשמל ומוצרי בית", "קוטלי יתושים ומזיקים"),
+    "קוטל": ("🏠 חשמל ומוצרי בית", "קוטלי יתושים ומזיקים"),
+    "מקרר": ("🏠 חשמל ומוצרי בית", "מקררים ומקפיאים"),
+    "ספה": ("🛋️ רהיטים וציוד לבית", "ספות ומערכות סלון"),
+    "אופניים": ("🚲 תחבורה וניידות", "אופניים רגילים"),
+    "קורקינט": ("🚲 תחבורה וניידות", "קורקינטים חשמליים"),
+    "esp32": ("🛠️ כלי עבודה, RF ומעבדה", "רכיבים אלקטרוניים ובקרים (ESP32)"),
+    "rf": ("🛠️ כלי עבודה, RF ומעבדה", "ציוד מדידה ו-RF")
 }
 
 CITY_COORDS = {
@@ -63,8 +128,6 @@ def validate_content(title, desc, main_cat):
     text_to_check = (title + " " + desc).lower()
     for word in blocked_words:
         if word in text_to_check: return False, f"המילה '{word}' חסומה."
-    if main_cat == "🛠️ כלי עבודה ומעבדה" and ("ספה" in text_to_check or "חולצה" in text_to_check):
-        return False, "חוסר התאמה בקטגוריה."
     if len(title) < 3: return False, "כותרת המודעה קצרה מדי."
     return True, ""
 
@@ -85,14 +148,8 @@ if 'current_user' not in st.session_state:
 
 st.markdown("""
     <style>
-    /* עיצוב כללי וצבעים */
     .stApp { background: #f8fafc; color: #0f172a; direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; }
-    
-    /* תפריט ניווט עליון */
-    .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
     div[role="radiogroup"] label, div[role="radiogroup"] div, p { color: #0f172a !important; }
-    
-    /* כרטיסיות מוצר */
     .product-card {
         background: #ffffff; border-radius: 20px; padding: 20px; margin-bottom: 20px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
@@ -101,48 +158,22 @@ st.markdown("""
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
     .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; background: #e0f2fe; color: #0284c7; font-size: 0.75rem; margin-left: 6px; font-weight: 600;}
     .user-info { font-size: 0.85rem; color: #64748b; margin-bottom: 12px; }
-    
-    /* כפתורים */
     .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
     .wa-btn, .call-btn, .inapp-btn { flex: 1; text-align: center; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
     .wa-btn { background: #25D366; } .wa-btn:hover { background: #16a34a; }
     .call-btn { background: #3b82f6; } .call-btn:hover { background: #2563eb; }
     .inapp-btn { background: #6366f1; } .inapp-btn:hover { background: #4f46e5; }
-    
-    /* שורת סינון חכם בסגנון יד 2 */
-    .filter-bar-title { 
-        font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; text-align: center; color: #1e293b; 
-    }
-    
-    /* דריסת העיצוב הכהה של תיבות הבחירה והחיפוש */
+    .filter-bar-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; text-align: center; color: #1e293b; }
     div[data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 30px !important;
-        padding: 2px 10px !important;
-        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05) !important;
+        background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 30px !important; padding: 2px 10px !important;
     }
-    div[data-baseweb="select"] span {
-        color: #334155 !important;
-        font-weight: 500 !important;
-    }
+    div[data-baseweb="select"] span { color: #334155 !important; font-weight: 500 !important; }
     input[type="text"] {
-        background-color: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 30px !important;
-        color: #334155 !important;
-        padding: 10px 20px !important;
-        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05) !important;
+        background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 30px !important; color: #334155 !important; padding: 10px 20px !important;
     }
     input::placeholder { color: #94a3b8 !important; }
-    
-    /* עיצוב התוויות מעל התיבות */
-    label {
-        color: #475569 !important;
-        font-weight: 600 !important;
-        font-size: 0.85rem !important;
-        margin-bottom: 5px !important;
-    }
+    label { color: #475569 !important; font-weight: 600 !important; font-size: 0.85rem !important; margin-bottom: 5px !important; }
+    .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -199,12 +230,12 @@ if choice == "🏠 דף הבית":
     selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options)
     
     selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
-    search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: בקר ESP32...")
+    search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: מחשב, ממיר, קוטל יתושים...")
     
     st.divider()
 
     all_items = [i for i in st.session_state['items'] if i.get('type') == 'giveaway']
-    if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category') == selected_main_cat]
+    if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category'] == selected_main_cat]
     if selected_sub_cat != "הכל": all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
     if selected_loc != "כל הארץ": all_items = [i for i in all_items if i.get('location') == selected_loc]
     if search_text: 
@@ -261,7 +292,7 @@ elif choice == "🔍 סוכן חיפוש":
     st.markdown('<div class="filter-bar-title">🔍 חיפוש חכם לפי מרחק</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     user_city = c1.selectbox("📍 המיקום שלך:", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index(st.session_state['current_user']['city']))
-    search_query = c2.text_input("🔍 מה לחפש?", placeholder="למשל: בקר ESP32, ספה, אופניים...")
+    search_query = c2.text_input("🔍 מה לחפש?", placeholder="למשל: מחשב, ממיר, קוטל יתושים...")
     if search_query:
         user_coords = CITY_COORDS[user_city]
         scored_items = []
@@ -280,9 +311,9 @@ elif choice == "🔍 סוכן חיפוש":
 
 elif choice == "➕ סוכן העלאה":
     st.markdown('<div class="filter-bar-title">➕ איזה פריט תרצה למסור?</div>', unsafe_allow_html=True)
-    title = st.text_input("מה שם הפריט?", placeholder="לדוגמה: אופניים חשמליים", key="upload_title")
+    title = st.text_input("מה שם הפריט?", placeholder="לדוגמה: קוטל יתושים, ממיר דיגיטלי...", key="upload_title")
     
-    suggested_main, suggested_sub = "📦 שונות", "אחר"
+    suggested_main, suggested_sub = "📦 פנאי, ספורט ושונות", "אחר"
     for keyword, (m_cat, s_cat) in AUTO_CAT_MAP.items():
         if keyword in title.lower(): suggested_main, suggested_sub = m_cat, s_cat; break
         
