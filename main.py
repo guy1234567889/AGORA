@@ -236,12 +236,16 @@ def render_card(item, unique_key_prefix, extra_info=""):
 if choice == "🏠 דף הבית":
     st.markdown('<div class="filter-bar-title">מה תרצו לחפש היום?</div>', unsafe_allow_html=True)
     
+    # פונקציית איפוס דינמית שמופעלת מיד כשמשנים קטגוריה ראשית
+    def reset_sub_category():
+        st.session_state['sub_cat_selection'] = "הכל"
+
     with st.form("filter_form"):
         f1, f2, f3, f4 = st.columns(4)
-        selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()))
+        selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()), on_change=reset_sub_category, key="main_cat_selection")
         
         sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
-        selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options)
+        selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options, key="sub_cat_selection")
         
         selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
         search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: מחשב, ממיר...")
