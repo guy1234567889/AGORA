@@ -12,22 +12,28 @@ st.set_page_config(page_title="אגורה Pro", page_icon="♻️", layout="wide
 
 DATA_FILE = "agora_data.json"
 
+# קטגוריות מורחבות בהשראת יד 2 - כולל אייקונים לתצוגה יוקרתית
 CATEGORIES = {
-    "רהיטים": ["ספות וסלון", "שולחנות וכיסאות", "ארונות ומדפים", "ריהוט לחדרי שינה"],
-    "מוצרי חשמל": ["מכונות כביסה ומייבשים", "מקררים ומקפיאים", "מוצרי מטבח קטנים", "מזגנים ומאווררים"],
-    "אלקטרוניקה ומעבדה": ["ציוד מדידה ו-RF", "בקרים ומיקרו-בקרים", "רכיבים ואביזרים", "טלפונים ומחשבים"],
-    "ביגוד ואופנה": ["ביגוד גברים", "ביגוד נשים", "הנעלה", "אקססוריז"],
-    "צעצועים וילדים": ["משחקי קופסה", "צעצועי התפתחות", "ציוד לתינוקות", "עגלות וטיולונים"],
-    "שונות": ["כלי עבודה", "ציוד ספורט", "ספרים ומגזינים", "אחר"]
+    "🛋️ רהיטים": ["ספות וסלון", "ספה בודדת", "פינות אוכל ושולחנות", "ארונות ומזנונים", "מיטות ומזרנים", "ריהוט גן"],
+    "📱 סלולר ותקשורת": ["מכשירים סלולריים", "כיסויים ומגנים", "מטענים וכבלים", "שעונים חכמים", "אחר"],
+    "🚲 אופניים וקורקינטים": ["אופניים חשמליים", "קורקינטים חשמליים", "אופניים (לא חשמלי)", "קורקינטים (לא חשמלי)", "קסדות ואביזרים"],
+    "📺 חשמל ואלקטרוניקה": ["טלוויזיות", "מקררים ומקפיאים", "מכונות כביסה ומייבשים", "תנורים וכיריים", "מזגנים ומאווררים", "קונסולות ומשחקים"],
+    "👶 מוצרי תינוקות וילדים": ["עגלות וטיולונים", "כיסאות בטיחות", "משחקים וצעצועים", "מיטות ולולים", "בגדי תינוקות"],
+    "🛠️ כלי עבודה ומעבדה": ["ציוד מדידה ו-RF", "בקרים ורכיבים (ESP32)", "כלי עבודה חשמליים", "כלי עבודה ידניים", "אחר"],
+    "👕 ביגוד ואופנה": ["בגדי נשים", "בגדי גברים", "נעליים", "אקססוריז ותיקים"],
+    "📦 שונות": ["ספרים ומגזינים", "ציוד ספורט וכושר", "קמפינג ופנאי", "אחר"]
 }
 
+# סוכן חכם - מיפוי מילים לקטגוריות החדשות
 AUTO_CAT_MAP = {
-    "אופניים": ("שונות", "ציוד ספורט"),
-    "מחשב": ("אלקטרוניקה ומעבדה", "טלפונים ומחשבים"),
-    "מקרר": ("מוצרי חשמל", "מקררים ומקפיאים"),
-    "ספה": ("רהיטים", "ספות וסלון"),
-    "חולצה": ("ביגוד ואופנה", "ביגוד גברים"),
-    "esp32": ("אלקטרוניקה ומעבדה", "בקרים ומיקרו-בקרים")
+    "אופניים": ("🚲 אופניים וקורקינטים", "אופניים (לא חשמלי)"),
+    "קורקינט": ("🚲 אופניים וקורקינטים", "קורקינטים חשמליים"),
+    "מחשב": ("📺 חשמל ואלקטרוניקה", "אחר"),
+    "מקרר": ("📺 חשמל ואלקטרוניקה", "מקררים ומקפיאים"),
+    "ספה": ("🛋️ רהיטים", "ספות וסלון"),
+    "חולצה": ("👕 ביגוד ואופנה", "בגדי גברים"),
+    "esp32": ("🛠️ כלי עבודה ומעבדה", "בקרים ורכיבים (ESP32)"),
+    "rf": ("🛠️ כלי עבודה ומעבדה", "ציוד מדידה ו-RF")
 }
 
 CITY_COORDS = {
@@ -59,7 +65,7 @@ def validate_content(title, desc, main_cat):
     text_to_check = (title + " " + desc).lower()
     for word in blocked_words:
         if word in text_to_check: return False, f"המילה '{word}' חסומה."
-    if main_cat == "אלקטרוניקה ומעבדה" and ("ספה" in text_to_check or "חולצה" in text_to_check):
+    if main_cat == "🛠️ כלי עבודה ומעבדה" and ("ספה" in text_to_check or "חולצה" in text_to_check):
         return False, "חוסר התאמה בקטגוריה."
     if len(title) < 3: return False, "כותרת המודעה קצרה מדי."
     return True, ""
@@ -99,6 +105,9 @@ st.markdown("""
     .inapp-btn { flex: 1; text-align: center; background: #6366f1; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
     .inapp-btn:hover { background: #4f46e5; }
     .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
+    
+    /* עיצוב שורת הסינון העליונה בדומה ליד 2 */
+    .filter-bar-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 15px; text-align: center; color: #ff5a5f; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -146,27 +155,41 @@ def render_card(item, unique_key_prefix, extra_info=""):
             st.toast("נשמר בהצלחה!")
 
 if choice == "🏠 דף הבית":
-    st.subheader("לוח פריטים למסירה")
-    c1, c2 = st.columns(2)
-    selected_main_cat = c1.selectbox("קטגוריה", ["הכל"] + list(CATEGORIES.keys()))
+    st.markdown('<div class="filter-bar-title">מה תרצו לחפש היום?</div>', unsafe_allow_html=True)
+    
+    # סרגל סינון חכם בסגנון יד 2 (4 עמודות אופקיות)
+    f1, f2, f3, f4 = st.columns(4)
+    selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()))
+    
+    # תת-קטגוריה מתעדכנת דינמית רק אם נבחרה קטגוריה ראשית
     sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
-    selected_sub_cat = c2.selectbox("תת-קטגוריה", sub_options)
+    selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options)
+    
+    selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
+    search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: בקר ESP32")
+    
+    st.divider()
+
     all_items = [i for i in st.session_state['items'] if i.get('type') == 'giveaway']
     if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category') == selected_main_cat]
     if selected_sub_cat != "הכל": all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
-    if not all_items: st.info("אין פריטים בסינון זה.")
-    cols = st.columns(3)
-    for index, item in enumerate(reversed(all_items)):
-        with cols[index % 3]: render_card(item, "home")
+    if selected_loc != "כל הארץ": all_items = [i for i in all_items if i.get('location') == selected_loc]
+    if search_text: 
+        all_items = [i for i in all_items if search_text.lower() in (i.get('title','') + i.get('description','')).lower()]
+        
+    if not all_items: 
+        st.info("אין פריטים התואמים לחיפוש שלך.")
+    else:
+        cols = st.columns(3)
+        for index, item in enumerate(reversed(all_items)):
+            with cols[index % 3]: render_card(item, "home")
 
 elif choice == "📍 מפה":
     st.subheader("מפה ארצית")
     selected_map_city = st.selectbox("🎯 התמקד בעיר:", ["כל הארץ"] + list(CITY_COORDS.keys()))
     map_center = [31.8944, 34.8094] if selected_map_city == "כל הארץ" else [CITY_COORDS[selected_map_city]["lat"], CITY_COORDS[selected_map_city]["lon"]]
     
-    # חיבור ישיר לשרת המפות של גוגל למראה נקי בעברית וללא צורך ב-API
     google_tiles = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-    
     m = folium.Map(
         location=map_center, 
         zoom_start=8 if selected_map_city == "כל הארץ" else 13, 
@@ -188,13 +211,11 @@ elif choice == "📍 מפה":
         phone = item.get('phone', '')
         wa_num = phone[1:] if phone.startswith('0') else phone
         
-        # משיכת התמונה עבור הפופ-אפ במפה
         img_src = item.get('image_url') or "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
         if item.get('image'):
             try: img_src = f"data:image/png;base64,{item.get('image')}"
             except: pass
             
-        # פופ-אפ מעוצב הכולל תמונה וכפתור צור קשר בולט
         popup_html = f"""
         <div style="direction: rtl; text-align: right; width: 170px; font-family: 'Segoe UI', Tahoma, sans-serif;">
             <img src="{img_src}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; margin-bottom:8px;"/>
@@ -204,21 +225,14 @@ elif choice == "📍 מפה":
         </div>
         """
         popup = folium.Popup(popup_html, max_width=200)
-        
         folium.CircleMarker(
-            location=[lat, lon],
-            radius=8,
-            color="#3b82f6",
-            fill=True,
-            fill_color="#3b82f6",
-            fill_opacity=0.9,
-            tooltip="לחץ לצפייה"
+            location=[lat, lon], radius=8, color="#3b82f6", fill=True, fill_color="#3b82f6", fill_opacity=0.9, tooltip="לחץ לצפייה"
         ).add_to(m).add_child(popup)
         
     st_folium(m, width=1200, height=500)
 
 elif choice == "🔍 סוכן חיפוש":
-    st.markdown("### 🔍 איזה פריט אתה מחפש?")
+    st.markdown("### 🔍 חיפוש לפי מרחק מדויק")
     c1, c2 = st.columns(2)
     user_city = c1.selectbox("📍 המיקום שלך:", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index(st.session_state['current_user']['city']))
     search_query = c2.text_input("🔍 מה לחפש?", placeholder="למשל: בקר ESP32, ספה, אופניים...")
@@ -242,13 +256,20 @@ elif choice == "🔍 סוכן חיפוש":
 elif choice == "➕ סוכן העלאה":
     st.markdown("### ➕ איזה פריט אתה כבר לא צריך ותרצה להעלות?")
     title = st.text_input("מה שם הפריט?", placeholder="לדוגמה: אופניים חשמליים", key="upload_title")
-    suggested_main, suggested_sub = "שונות", "אחר"
+    
+    suggested_main, suggested_sub = "📦 שונות", "אחר"
     for keyword, (m_cat, s_cat) in AUTO_CAT_MAP.items():
         if keyword in title.lower(): suggested_main, suggested_sub = m_cat, s_cat; break
+        
     with st.form("smart_upload_form", clear_on_submit=False):
         c1, c2 = st.columns(2)
-        main_cat = c1.selectbox("לאיזו קטגוריה הוא שייך?", list(CATEGORIES.keys()), index=list(CATEGORIES.keys()).index(suggested_main))
-        sub_cat = c2.selectbox("תת-קטגוריה:", CATEGORIES[main_cat], index=CATEGORIES[main_cat].index(suggested_sub) if suggested_sub in CATEGORIES[main_cat] else 0)
+        # זיהוי אוטומטי של קטגוריות
+        main_cat_idx = list(CATEGORIES.keys()).index(suggested_main) if suggested_main in CATEGORIES else 0
+        main_cat = c1.selectbox("לאיזו קטגוריה הוא שייך?", list(CATEGORIES.keys()), index=main_cat_idx)
+        
+        sub_cat_idx = CATEGORIES[main_cat].index(suggested_sub) if suggested_sub in CATEGORIES[main_cat] else 0
+        sub_cat = c2.selectbox("תת-קטגוריה:", CATEGORIES[main_cat], index=sub_cat_idx)
+        
         c3, c4 = st.columns(2)
         city = c3.selectbox("מהי עיר האיסוף?", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index(st.session_state['current_user']['city']))
         phone = c4.text_input("מספר טלפון לתיאום:", value=st.session_state['current_user']['phone'])
