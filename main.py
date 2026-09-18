@@ -12,7 +12,6 @@ st.set_page_config(page_title="אגורה Pro", page_icon="♻️", layout="wide
 
 DATA_FILE = "agora_data.json"
 
-# קטלוג אב מקיף (Master Catalog) בסגנון יד 2
 CATEGORIES = {
     "📱 אלקטרוניקה, מחשבים ותקשורת": [
         "מכשירים סלולריים וטאבלטים", 
@@ -81,7 +80,6 @@ CATEGORIES = {
     ]
 }
 
-# סוכן חכם מורחב לזיהוי אוטומטי של תת-קטגוריות לפי מילות מפתח
 AUTO_CAT_MAP = {
     "מחשב": ("📱 אלקטרוניקה, מחשבים ותקשורת", "מחשבים ניידים"),
     "לפטופ": ("📱 אלקטרוניקה, מחשבים ותקשורת", "מחשבים ניידים"),
@@ -235,7 +233,7 @@ if choice == "🏠 דף הבית":
     st.divider()
 
     all_items = [i for i in st.session_state['items'] if i.get('type') == 'giveaway']
-    if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category'] == selected_main_cat]
+    if selected_main_cat != "הכל": all_items = [i for i in all_items if i.get('category') == selected_main_cat]
     if selected_sub_cat != "הכל": all_items = [i for i in all_items if i.get('sub_category') == selected_sub_cat]
     if selected_loc != "כל הארץ": all_items = [i for i in all_items if i.get('location') == selected_loc]
     if search_text: 
