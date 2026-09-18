@@ -164,11 +164,14 @@ elif choice == "📍 מפה":
     selected_map_city = st.selectbox("🎯 התמקד בעיר:", ["כל הארץ"] + list(CITY_COORDS.keys()))
     map_center = [31.8944, 34.8094] if selected_map_city == "כל הארץ" else [CITY_COORDS[selected_map_city]["lat"], CITY_COORDS[selected_map_city]["lon"]]
     
-    # מפה מוגבלת לישראל, עם סגנון נקי ללא עומס שפות (CartoDB positron)
+    # חיבור ישיר לשרת המפות של גוגל למראה נקי בעברית וללא צורך ב-API
+    google_tiles = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+    
     m = folium.Map(
         location=map_center, 
         zoom_start=8 if selected_map_city == "כל הארץ" else 13, 
-        tiles="CartoDB positron",
+        tiles=google_tiles,
+        attr="Google",
         min_zoom=7,
         max_bounds=True,
         min_lat=29.4, max_lat=33.4, min_lon=34.2, max_lon=35.9
@@ -182,29 +185,34 @@ elif choice == "📍 מפה":
         lat = item.get('lat', map_center[0]) + (idx * 0.001 % 0.01)
         lon = item.get('lon', map_center[1]) + (idx * 0.001 % 0.01)
         
-        # יצירת חלונית קופצת עם פרטי הפריט וכפתור וואטסאפ
         phone = item.get('phone', '')
         wa_num = phone[1:] if phone.startswith('0') else phone
+        
+        # משיכת התמונה עבור הפופ-אפ במפה
+        img_src = item.get('image_url') or "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
+        if item.get('image'):
+            try: img_src = f"data:image/png;base64,{item.get('image')}"
+            except: pass
+            
+        # פופ-אפ מעוצב הכולל תמונה וכפתור צור קשר בולט
         popup_html = f"""
-        <div style="direction: rtl; text-align: right; width: 140px; font-family: 'Segoe UI', Tahoma, sans-serif;">
-            <b style="font-size:14px; color:#0f172a;">{item.get('title')}</b><br>
-            <span style="color:#64748b; font-size:12px;">{item.get('category')}</span><br>
-            <div style="margin-top: 8px;">
-                <a href="https://wa.me/972{wa_num}" target="_blank" style="padding:4px 8px; background:#25D366; color:white; border-radius:5px; text-decoration:none; font-size:12px; display:inline-block;">לפניה בוואטסאפ</a>
-            </div>
+        <div style="direction: rtl; text-align: right; width: 170px; font-family: 'Segoe UI', Tahoma, sans-serif;">
+            <img src="{img_src}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; margin-bottom:8px;"/>
+            <b style="font-size:15px; color:#0f172a; display:block; margin-bottom:2px;">{item.get('title')}</b>
+            <span style="color:#64748b; font-size:12px; display:block; margin-bottom:10px;">{item.get('category')}</span>
+            <a href="https://wa.me/972{wa_num}" target="_blank" style="padding:6px; background:#25D366; color:white; border-radius:5px; text-decoration:none; font-size:13px; font-weight:bold; display:block; text-align:center;">לפניה בוואטסאפ</a>
         </div>
         """
         popup = folium.Popup(popup_html, max_width=200)
         
-        # סמן בצורת נקודה כחולה (CircleMarker)
         folium.CircleMarker(
             location=[lat, lon],
-            radius=7,
+            radius=8,
             color="#3b82f6",
             fill=True,
             fill_color="#3b82f6",
             fill_opacity=0.9,
-            tooltip="לחץ לפרטים"
+            tooltip="לחץ לצפייה"
         ).add_to(m).add_child(popup)
         
     st_folium(m, width=1200, height=500)
