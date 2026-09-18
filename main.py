@@ -86,8 +86,13 @@ if 'current_user' not in st.session_state:
 st.markdown("""
     <style>
     .stApp { background: #f8fafc; color: #0f172a; direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    
+    /* תיקון צבעי שדות קלט */
     input, textarea, div[data-baseweb="select"] { background-color: #ffffff !important; color: #0f172a !important; }
     .stTextInput input, .stTextArea textarea { color: #0f172a !important; background-color: #ffffff !important; }
+    
+    /* תיקון צבע הטקסט של כפתורי רדיו ותוויות למצב כהה */
+    .stRadio p, label p, label, div[role="radiogroup"] p, .stMarkdown p { color: #0f172a !important; }
     
     .product-card {
         background: #ffffff; border-radius: 20px; padding: 20px; margin-bottom: 20px;
@@ -109,7 +114,6 @@ st.title("♻️ אגורה Pro")
 
 st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
 menu_options = ["🏠 דף הבית", "📍 מפה", "🔍 סוכן חיפוש", "➕ סוכן העלאה", "❤️ שמורים", "📊 ניהול ועסקים"]
-# שימוש בתפריט בחירה רגיל כדי שלא יישבר לנקודות במסכים קטנים
 choice = st.selectbox("📌 בחר עמוד לניווט:", menu_options, label_visibility="collapsed")
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -119,7 +123,6 @@ def render_card(item, unique_key_prefix, extra_info=""):
     wa_num = phone[1:] if phone.startswith('0') else phone
     contact_pref = item.get('contact_pref', 'שיחה רגילה או וואטסאפ')
     
-    # מנגנון חסין לתמונות שבורות
     default_img = "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
     img_src = item.get('image_url', '')
     if item.get('image') and len(item.get('image')) > 50:
@@ -128,7 +131,6 @@ def render_card(item, unique_key_prefix, extra_info=""):
     if not img_src or len(img_src) < 10:
         img_src = default_img
 
-    # יצירת הכפתורים בשורה אחת ללא רווחים מקדימים כדי למנוע הופעת קוד כ-Code Block
     if contact_pref == "הודעות באפליקציה בלבד":
         buttons_html = '<a href="#" class="inapp-btn">✉️ שלח הודעה באפליקציה</a>'
     elif contact_pref == "רק וואטסאפ":
