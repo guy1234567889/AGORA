@@ -12,7 +12,6 @@ st.set_page_config(page_title="אגורה Pro", page_icon="♻️", layout="wide
 
 DATA_FILE = "agora_data.json"
 
-# קטגוריות מורחבות בהשראת יד 2 - כולל אייקונים לתצוגה יוקרתית
 CATEGORIES = {
     "🛋️ רהיטים": ["ספות וסלון", "ספה בודדת", "פינות אוכל ושולחנות", "ארונות ומזנונים", "מיטות ומזרנים", "ריהוט גן"],
     "📱 סלולר ותקשורת": ["מכשירים סלולריים", "כיסויים ומגנים", "מטענים וכבלים", "שעונים חכמים", "אחר"],
@@ -24,7 +23,6 @@ CATEGORIES = {
     "📦 שונות": ["ספרים ומגזינים", "ציוד ספורט וכושר", "קמפינג ופנאי", "אחר"]
 }
 
-# סוכן חכם - מיפוי מילים לקטגוריות החדשות
 AUTO_CAT_MAP = {
     "אופניים": ("🚲 אופניים וקורקינטים", "אופניים (לא חשמלי)"),
     "קורקינט": ("🚲 אופניים וקורקינטים", "קורקינטים חשמליים"),
@@ -87,27 +85,64 @@ if 'current_user' not in st.session_state:
 
 st.markdown("""
     <style>
+    /* עיצוב כללי וצבעים */
     .stApp { background: #f8fafc; color: #0f172a; direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    
+    /* תפריט ניווט עליון */
+    .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
     div[role="radiogroup"] label, div[role="radiogroup"] div, p { color: #0f172a !important; }
+    
+    /* כרטיסיות מוצר */
     .product-card {
         background: #ffffff; border-radius: 20px; padding: 20px; margin-bottom: 20px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-        border: 1px solid #f1f5f9; transition: transform 0.2s ease, box-shadow 0.2s;
+        border: 1px solid #e2e8f0; transition: transform 0.2s ease, box-shadow 0.2s;
     }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
     .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; background: #e0f2fe; color: #0284c7; font-size: 0.75rem; margin-left: 6px; font-weight: 600;}
     .user-info { font-size: 0.85rem; color: #64748b; margin-bottom: 12px; }
-    .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
-    .wa-btn { flex: 1; text-align: center; background: #25D366; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
-    .wa-btn:hover { background: #16a34a; }
-    .call-btn { flex: 1; text-align: center; background: #3b82f6; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
-    .call-btn:hover { background: #2563eb; }
-    .inapp-btn { flex: 1; text-align: center; background: #6366f1; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
-    .inapp-btn:hover { background: #4f46e5; }
-    .nav-bar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px;}
     
-    /* עיצוב שורת הסינון העליונה בדומה ליד 2 */
-    .filter-bar-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 15px; text-align: center; color: #ff5a5f; }
+    /* כפתורים */
+    .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+    .wa-btn, .call-btn, .inapp-btn { flex: 1; text-align: center; color: white !important; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s;}
+    .wa-btn { background: #25D366; } .wa-btn:hover { background: #16a34a; }
+    .call-btn { background: #3b82f6; } .call-btn:hover { background: #2563eb; }
+    .inapp-btn { background: #6366f1; } .inapp-btn:hover { background: #4f46e5; }
+    
+    /* שורת סינון חכם בסגנון יד 2 */
+    .filter-bar-title { 
+        font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; text-align: center; color: #1e293b; 
+    }
+    
+    /* דריסת העיצוב הכהה של תיבות הבחירה והחיפוש */
+    div[data-baseweb="select"] > div {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 30px !important;
+        padding: 2px 10px !important;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05) !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #334155 !important;
+        font-weight: 500 !important;
+    }
+    input[type="text"] {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 30px !important;
+        color: #334155 !important;
+        padding: 10px 20px !important;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05) !important;
+    }
+    input::placeholder { color: #94a3b8 !important; }
+    
+    /* עיצוב התוויות מעל התיבות */
+    label {
+        color: #475569 !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        margin-bottom: 5px !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -157,16 +192,14 @@ def render_card(item, unique_key_prefix, extra_info=""):
 if choice == "🏠 דף הבית":
     st.markdown('<div class="filter-bar-title">מה תרצו לחפש היום?</div>', unsafe_allow_html=True)
     
-    # סרגל סינון חכם בסגנון יד 2 (4 עמודות אופקיות)
     f1, f2, f3, f4 = st.columns(4)
     selected_main_cat = f1.selectbox("סוג מוצר", ["הכל"] + list(CATEGORIES.keys()))
     
-    # תת-קטגוריה מתעדכנת דינמית רק אם נבחרה קטגוריה ראשית
     sub_options = ["הכל"] + (CATEGORIES[selected_main_cat] if selected_main_cat != "הכל" else [])
     selected_sub_cat = f2.selectbox("תת-קטגוריה", sub_options)
     
     selected_loc = f3.selectbox("אזור / עיר", ["כל הארץ"] + list(CITY_COORDS.keys()))
-    search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: בקר ESP32")
+    search_text = f4.text_input("חיפוש חופשי", placeholder="למשל: בקר ESP32...")
     
     st.divider()
 
@@ -191,12 +224,8 @@ elif choice == "📍 מפה":
     
     google_tiles = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
     m = folium.Map(
-        location=map_center, 
-        zoom_start=8 if selected_map_city == "כל הארץ" else 13, 
-        tiles=google_tiles,
-        attr="Google",
-        min_zoom=7,
-        max_bounds=True,
+        location=map_center, zoom_start=8 if selected_map_city == "כל הארץ" else 13, 
+        tiles=google_tiles, attr="Google", min_zoom=7, max_bounds=True,
         min_lat=29.4, max_lat=33.4, min_lon=34.2, max_lon=35.9
     )
     
@@ -207,10 +236,8 @@ elif choice == "📍 מפה":
         if selected_map_city != "כל הארץ" and item.get('location') != selected_map_city: continue
         lat = item.get('lat', map_center[0]) + (idx * 0.001 % 0.01)
         lon = item.get('lon', map_center[1]) + (idx * 0.001 % 0.01)
-        
         phone = item.get('phone', '')
         wa_num = phone[1:] if phone.startswith('0') else phone
-        
         img_src = item.get('image_url') or "https://images.unsplash.com/photo-1584467735811-628b0fd4603d?w=600&q=80"
         if item.get('image'):
             try: img_src = f"data:image/png;base64,{item.get('image')}"
@@ -224,15 +251,14 @@ elif choice == "📍 מפה":
             <a href="https://wa.me/972{wa_num}" target="_blank" style="padding:6px; background:#25D366; color:white; border-radius:5px; text-decoration:none; font-size:13px; font-weight:bold; display:block; text-align:center;">לפניה בוואטסאפ</a>
         </div>
         """
-        popup = folium.Popup(popup_html, max_width=200)
         folium.CircleMarker(
             location=[lat, lon], radius=8, color="#3b82f6", fill=True, fill_color="#3b82f6", fill_opacity=0.9, tooltip="לחץ לצפייה"
-        ).add_to(m).add_child(popup)
+        ).add_to(m).add_child(folium.Popup(popup_html, max_width=200))
         
     st_folium(m, width=1200, height=500)
 
 elif choice == "🔍 סוכן חיפוש":
-    st.markdown("### 🔍 חיפוש לפי מרחק מדויק")
+    st.markdown('<div class="filter-bar-title">🔍 חיפוש חכם לפי מרחק</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     user_city = c1.selectbox("📍 המיקום שלך:", list(CITY_COORDS.keys()), index=list(CITY_COORDS.keys()).index(st.session_state['current_user']['city']))
     search_query = c2.text_input("🔍 מה לחפש?", placeholder="למשל: בקר ESP32, ספה, אופניים...")
@@ -245,8 +271,7 @@ elif choice == "🔍 סוכן חיפוש":
                 dist = calculate_distance(user_coords['lat'], user_coords['lon'], item.get('lat', 0), item.get('lon', 0))
                 scored_items.append((dist, item))
         scored_items.sort(key=lambda x: x[0])
-        if not scored_items:
-            st.warning("לא מצאנו פריטים תואמים.")
+        if not scored_items: st.warning("לא מצאנו פריטים תואמים.")
         else:
             st.success(f"מצאנו {len(scored_items)} פריטים, מסודרים מהקרוב לרחוק:")
             cols = st.columns(3)
@@ -254,7 +279,7 @@ elif choice == "🔍 סוכן חיפוש":
                 with cols[index % 3]: render_card(item, "agent", extra_info=f"{dist} ק\"מ ממך")
 
 elif choice == "➕ סוכן העלאה":
-    st.markdown("### ➕ איזה פריט אתה כבר לא צריך ותרצה להעלות?")
+    st.markdown('<div class="filter-bar-title">➕ איזה פריט תרצה למסור?</div>', unsafe_allow_html=True)
     title = st.text_input("מה שם הפריט?", placeholder="לדוגמה: אופניים חשמליים", key="upload_title")
     
     suggested_main, suggested_sub = "📦 שונות", "אחר"
@@ -263,7 +288,6 @@ elif choice == "➕ סוכן העלאה":
         
     with st.form("smart_upload_form", clear_on_submit=False):
         c1, c2 = st.columns(2)
-        # זיהוי אוטומטי של קטגוריות
         main_cat_idx = list(CATEGORIES.keys()).index(suggested_main) if suggested_main in CATEGORIES else 0
         main_cat = c1.selectbox("לאיזו קטגוריה הוא שייך?", list(CATEGORIES.keys()), index=main_cat_idx)
         
